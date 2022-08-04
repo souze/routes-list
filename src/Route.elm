@@ -48,6 +48,22 @@ type alias CommonRouteData a =
 
 type ClimbType = Trad | Sport | Boulder | Mix
 
+climbTypeToString : ClimbType -> String
+climbTypeToString ct =
+    case ct of
+        Trad ->
+            "Trad"
+
+        Sport ->
+            "Sport"
+
+        Mix ->
+            "Mix"
+
+        Boulder ->
+            "Boulder"
+
+
 
 commonToExistingRoute : RouteId -> CommonRouteData a -> RouteData
 commonToExistingRoute id common =

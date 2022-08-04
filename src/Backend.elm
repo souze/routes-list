@@ -77,6 +77,17 @@ update msg model =
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
+        ToBackendResetRouteList newRoutes ->
+            let
+                newModel = model
+                    |> \m -> { m | routes = [] }
+                    |> addNewRouteList newRoutes
+            in
+            ( newModel
+            , Lamdera.broadcast <|
+                AllRoutesAnnouncement newModel.routes
+            )
+
         ToBackendCreateNewRoute route ->
             let
                 newModel =
@@ -112,6 +123,12 @@ updateFromFrontend sessionId clientId msg model =
 
         NoOpToBackend ->
             ( model, Cmd.none )
+
+
+addNewRouteList : List NewRouteData -> Model -> Model
+addNewRouteList newRoutes model =
+    newRoutes
+        |> List.foldl createNewRoute model
 
 
 createNewRoute : NewRouteData -> Model -> Model

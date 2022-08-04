@@ -16,12 +16,18 @@ type alias FrontendModel =
     { key : Key
     , message : String
     , rows : List RowData
-    , newRouteData : Maybe NewRouteData
-    , newRouteDatePickerData : DatePickerData
     , currentDate : Date
-    , viewFilter : ViewFilter
+    , page : Page
     }
 
+
+type Page
+    = RoutePage ViewFilter
+    | NewRoutePage { routeData : NewRouteData, datePickerData : DatePickerData }
+    | InputJsonPage String (Maybe JsonError)
+    | ViewJsonPage
+
+type alias JsonError = String
 
 type ViewFilter
     = ViewAll
@@ -51,12 +57,16 @@ type alias BackendModel =
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
+    | InputJsonButtonPressed
+    | ViewAsJsonButtonPressed
     | RouteButtonClicked RouteId
     | EditRouteEnable RouteId
     | EditRouteSave RouteData
     | EditRouteRemove RouteId
     | EditRouteDiscardChanges RouteId
     | EditRouteUpdated RouteIdOrNew String String
+    | JsonInputTextChanged String
+    | JsonInputSubmitButtonPressed
     | NewRouteButtonPressed
     | WishlistButtonPressed
     | LogButtonPressed
@@ -71,6 +81,7 @@ type ToBackend
     = UpdateRoute RouteData
     | RemoveRoute RouteId
     | ToBackendCreateNewRoute NewRouteData
+    | ToBackendResetRouteList (List NewRouteData)
     | NoOpToBackend
 
 

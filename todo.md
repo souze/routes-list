@@ -1,6 +1,5 @@
 
 # todos
 
-* json view
-* json input
+* sort order
 * login

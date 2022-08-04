@@ -10,7 +10,11 @@ import Element.Background
 import Element.Font
 import Element.Input
 import Html exposing (a)
+import Json.Decode
+import Json.Encode
+import JsonRoute
 import Lamdera
+import Lamdera.Migrations exposing (MsgMigration)
 import List.Extra
 import Maybe.Extra
 import Random
@@ -42,20 +46,8 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
-      , viewFilter = ViewAll
-      , newRouteDatePickerData = defaultDatePickerData
+      , page = RoutePage ViewAll
       , currentDate = Date.fromCalendarDate 2022 Time.Aug 1
-      , newRouteData =
-            Nothing
-
-      -- Just
-      --     { name = "hux"
-      --     , grade = "3"
-      --     , tickDate2 = Nothing
-      --     , notes = "Lajbans"
-      --     , area = "Utby"
-      --     , type_ = Trad
-      --     }
       , rows =
             [ { expanded = True
               , datePickerData = defaultDatePickerData
@@ -121,33 +113,67 @@ defaultDatePickerData =
     }
 
 
+defaultDatePickerDataWithToday : Date -> DatePickerData
+defaultDatePickerDataWithToday today =
+    { dateText = ""
+    , pickerModel = DatePicker.init |> DatePicker.setToday today
+    }
+
+
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        JsonInputSubmitButtonPressed ->
+            case model.page of
+                InputJsonPage text _ ->
+                    trySubmitInputJson text model
+
+                _ ->
+                    -- That's strange, why are we not on the input json page?
+                    ( model
+                    , Cmd.none
+                    )
+
+        JsonInputTextChanged newValue ->
+            ( case model.page of
+                InputJsonPage _ err ->
+                    { model | page = InputJsonPage newValue err }
+
+                _ ->
+                    -- That's strange, why was the field updated when the page isn't visible?
+                    model
+            , Cmd.none
+            )
+
+        ViewAsJsonButtonPressed ->
+            ( { model | page = ViewJsonPage }
+            , Cmd.none
+            )
+
+        InputJsonButtonPressed ->
+            ( { model | page = InputJsonPage "" Nothing }
+            , Cmd.none
+            )
+
         ViewAllButtonPressed ->
-            ( { model | viewFilter = Types.ViewAll }
+            ( { model | page = RoutePage Types.ViewAll }
             , Cmd.none
             )
 
         WishlistButtonPressed ->
-            ( { model | viewFilter = Types.ViewWishlist }
+            ( { model | page = RoutePage Types.ViewWishlist }
             , Cmd.none
             )
 
         LogButtonPressed ->
-            ( { model | viewFilter = Types.ViewLog }
+            ( { model | page = RoutePage Types.ViewLog }
             , Cmd.none
             )
 
         SetCurrentDate date ->
-            let
-                dpd : DatePickerData
-                dpd =
-                    model.newRouteDatePickerData
-            in
             ( { model
                 | currentDate = date
-                , newRouteDatePickerData = { dpd | pickerModel = dpd.pickerModel |> DatePicker.setToday date }
+                , page = model.page |> updateCurrentDateForPage date
                 , rows = model.rows |> newRouteAnnouncementForAllRows date
               }
             , Cmd.none
@@ -207,6 +233,48 @@ update msg model =
             ( routeUpdated id getter newValue model, Cmd.none )
 
 
+trySubmitInputJson : String -> Model -> ( Model, Cmd FrontendMsg )
+trySubmitInputJson text model =
+    let
+        routesOrError : Result Json.Decode.Error (List NewRouteData)
+        routesOrError =
+            Json.Decode.decodeString JsonRoute.decodeRouteList text
+
+        statusStr : String
+        statusStr =
+            case routesOrError of
+                Ok routes ->
+                    "Yes!"
+
+                Err err ->
+                    "Err: " ++ Json.Decode.errorToString err
+    in
+    case routesOrError of
+        Ok routes ->
+            ( { model | page = InputJsonPage text (Just statusStr) }
+            , Lamdera.sendToBackend <|
+                ToBackendResetRouteList routes
+            )
+
+        Err err ->
+            ( { model | page = InputJsonPage text (Just statusStr) }
+            , Cmd.none
+            )
+
+
+updateCurrentDateForPage : Date -> Page -> Page
+updateCurrentDateForPage today page =
+    case page of
+        NewRoutePage { routeData, datePickerData } ->
+            NewRoutePage
+                { routeData = routeData
+                , datePickerData = { datePickerData | pickerModel = datePickerData.pickerModel |> DatePicker.setToday today }
+                }
+
+        _ ->
+            page
+
+
 newRouteAnnouncementForAllRows : Date -> List RowData -> List RowData
 newRouteAnnouncementForAllRows date rows =
     rows
@@ -234,21 +302,21 @@ updateDatePicker : RouteIdOrNew -> DatePicker.ChangeEvent -> Model -> Model
 updateDatePicker routeId changeEvent model =
     case routeId of
         NewRouteId ->
-            case model.newRouteData of
-                Just newRouteData ->
+            case model.page of
+                NewRoutePage { routeData, datePickerData } ->
                     let
-                        nrd =
-                            newRouteData
-
                         ( newDate, newDpd ) =
-                            updateDatePickerData changeEvent nrd.tickDate2 model.newRouteDatePickerData
+                            updateDatePickerData changeEvent routeData.tickDate2 datePickerData
                     in
                     { model
-                        | newRouteDatePickerData = newDpd
-                        , newRouteData = Just { nrd | tickDate2 = newDate }
+                        | page =
+                            NewRoutePage
+                                { routeData = { routeData | tickDate2 = newDate }
+                                , datePickerData = newDpd
+                                }
                     }
 
-                Nothing ->
+                _ ->
                     -- Strange, why was the date picker updated when not visible?
                     model
 
@@ -308,27 +376,28 @@ updateDatePickerData changeEvent currentDatePicked dpd =
 
 createNewRoute : Model -> ( Model, Cmd msg )
 createNewRoute model =
-    case model.newRouteData of
-        Just newRouteData ->
+    case model.page of
+        NewRoutePage { routeData } ->
             -- No validation
-            ( { model | newRouteData = Nothing }
+            ( { model | page = RoutePage ViewAll }
             , Lamdera.sendToBackend <|
-                ToBackendCreateNewRoute newRouteData
+                ToBackendCreateNewRoute routeData
             )
 
-        Nothing ->
+        _ ->
             -- That's strange. How did we press the save button when the view wasn't expanded?
             ( model, Cmd.none )
 
 
 newRouteButtonPressed : Model -> Model
 newRouteButtonPressed model =
-    case model.newRouteData of
-        Just newRouteData ->
-            { model | newRouteData = Nothing }
-
-        Nothing ->
-            { model | newRouteData = Just initialNewRoute }
+    { model
+        | page =
+            NewRoutePage
+                { routeData = initialNewRoute
+                , datePickerData = defaultDatePickerDataWithToday model.currentDate
+                }
+    }
 
 
 initialNewRoute : NewRouteData
@@ -374,15 +443,23 @@ mapRowWithRouteId id f rows =
 
 routeUpdated : RouteIdOrNew -> String -> String -> Model -> Model
 routeUpdated routeIdOrNew fieldName newValue m =
-    case ( routeIdOrNew, m.newRouteData ) of
-        ( ExistingRoute id, _ ) ->
-            { m | rows = updateEditRoute id (updateEditRouteField fieldName newValue) m.rows }
+    case m.page of
+        NewRoutePage { routeData, datePickerData } ->
+            { m
+                | page =
+                    NewRoutePage
+                        { routeData = updateEditRouteField fieldName newValue routeData
+                        , datePickerData = datePickerData
+                        }
+            }
 
-        ( NewRouteId, Just nrd ) ->
-            { m | newRouteData = Just <| updateEditRouteField fieldName newValue nrd }
+        _ ->
+            case routeIdOrNew of
+                ExistingRoute id ->
+                    { m | rows = updateEditRoute id (updateEditRouteField fieldName newValue) m.rows }
 
-        ( NewRouteId, Nothing ) ->
-            m
+                _ ->
+                    m
 
 
 updateEditRouteField : String -> String -> CommonRouteData a -> CommonRouteData a
@@ -393,6 +470,9 @@ updateEditRouteField fieldName newValue rd =
 
         "grade" ->
             { rd | grade = newValue }
+
+        "area" ->
+            { rd | area = newValue }
 
         "notes" ->
             { rd | notes = newValue }
@@ -494,65 +574,124 @@ view : Model -> Browser.Document FrontendMsg
 view model =
     { title = ""
     , body =
-        [ Element.layout [] (viewCols model)
+        [ Element.layout [] (viewMainColumn model)
         ]
     }
 
 
-viewCols : Model -> Element.Element FrontendMsg
-viewCols model =
+viewMainColumn : Model -> Element.Element FrontendMsg
+viewMainColumn model =
     Element.column [ Element.spacing 10, Element.padding 20 ] <|
         List.concat
             [ [ viewTopRowButtons ]
-            , case model.newRouteData of
-                Just newRouteData ->
-                    [ viewNewRoute newRouteData model.newRouteDatePickerData ]
+            , case model.page of
+                RoutePage viewFilter ->
+                    model.rows
+                        |> filterAndSortView viewFilter
+                        |> List.map viewRoute
 
-                Nothing ->
-                    []
-            , model.rows
-                |> filterAndSortView model.viewFilter
-                |> List.map (viewRoute model.newRouteDatePickerData)
+                NewRoutePage { routeData, datePickerData } ->
+                    [ viewNewRoute routeData datePickerData ]
+
+                InputJsonPage text err ->
+                    [ viewJsonInput text ]
+                        ++ (err
+                                |> Maybe.map viewJsonInputError
+                                |> Maybe.Extra.toList
+                           )
+                        ++ [ viewJsonInputSubmitButton ]
+
+                ViewJsonPage ->
+                    [ viewJsonText model.rows ]
+
             ]
+
+
+viewJsonText : List RowData -> Element.Element FrontendMsg
+viewJsonText rows =
+    Element.Input.multiline []
+        { onChange = \_ -> NoOpFrontendMsg
+        , text = routeListJsonString rows
+        , placeholder = Nothing
+        , label = Element.Input.labelAbove [] (Element.text "Json")
+        , spellcheck = False
+        }
+
+routeListJsonString : List RowData -> String
+routeListJsonString rows =
+    "[\n" ++
+        (rows |> List.map routeJsonString |> String.join ",\n")
+     ++ "\n]"
+
+routeJsonString : RowData -> String
+routeJsonString row =
+    Json.Encode.encode 4 (JsonRoute.encodeRoute row.route.realRoute)
+
+
+viewJsonInputError : JsonError -> Element.Element msg
+viewJsonInputError err =
+    Element.text err
+
+
+viewJsonInput : String -> Element.Element FrontendMsg
+viewJsonInput text =
+    Element.Input.multiline []
+        { onChange = JsonInputTextChanged
+        , text = text
+        , placeholder = Nothing
+        , label = Element.Input.labelAbove [] (Element.text "Json")
+        , spellcheck = False
+        }
+
+
+viewJsonInputSubmitButton : Element.Element FrontendMsg
+viewJsonInputSubmitButton =
+    buttonToSendEvent "Submit" JsonInputSubmitButtonPressed
 
 
 filterAndSortView : Types.ViewFilter -> List RowData -> List RowData
 filterAndSortView viewFilter rows =
     let
-        (filter, sorter) = filterAndSorter viewFilter
+        ( filter, sorter ) =
+            filterAndSorter viewFilter
     in
     rows
         |> List.filter filter
         |> sorter
 
-filterAndSorter : ViewFilter -> ((RowData -> Bool), (List RowData -> List RowData))
+
+filterAndSorter : ViewFilter -> ( RowData -> Bool, List RowData -> List RowData )
 filterAndSorter viewFilter =
     case viewFilter of
         ViewLog ->
-            (\rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isJust
-            , logViewSorter)
+            ( \rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isJust
+            , logViewSorter
+            )
 
         ViewWishlist ->
-            (\rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isNothing
-            , identity)
+            ( \rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isNothing
+            , identity
+            )
 
         ViewAll ->
-            (\_ -> True
-            , identity)
+            ( \_ -> True
+            , identity
+            )
+
 
 logViewSorter : List RowData -> List RowData
 logViewSorter rows =
     let
         sorter : RowData -> RowData -> Order
         sorter rd1 rd2 =
-            case (rd1.route.realRoute.tickDate2, rd2.route.realRoute.tickDate2) of
-                (Just a, Just b) ->
+            case ( rd1.route.realRoute.tickDate2, rd2.route.realRoute.tickDate2 ) of
+                ( Just a, Just b ) ->
                     Date.compare a b
 
-                (Just a, Nothing) ->
+                ( Just a, Nothing ) ->
                     LT
 
-                (Nothing, Just b) ->
+                ( Nothing, Just b ) ->
                     GT
 
                 _ ->
@@ -561,6 +700,7 @@ logViewSorter rows =
     rows
         |> List.sortWith sorter
         |> List.reverse
+
 
 viewNewRoute : NewRouteData -> DatePickerData -> Element.Element FrontendMsg
 viewNewRoute newRouteData datePickerData =
@@ -574,6 +714,8 @@ viewTopRowButtons =
         , buttonToSendEvent "Wishlist" WishlistButtonPressed
         , buttonToSendEvent "Log" LogButtonPressed
         , buttonToSendEvent "All" ViewAllButtonPressed
+        , buttonToSendEvent "Input Json" InputJsonButtonPressed
+        , buttonToSendEvent "View as Json" ViewAsJsonButtonPressed
         ]
 
 
@@ -582,22 +724,6 @@ buttonToSendEvent labelText event =
     Element.Input.button []
         { onPress = Just event
         , label = actionButtonLabel labelText
-        }
-
-
-viewClimbLogButton : Element.Element FrontendMsg
-viewClimbLogButton =
-    Element.Input.button []
-        { onPress = Just <| LogButtonPressed
-        , label = actionButtonLabel "Log"
-        }
-
-
-viewAddRouteButton : Element.Element FrontendMsg
-viewAddRouteButton =
-    Element.Input.button []
-        { onPress = Just <| NewRouteButtonPressed
-        , label = actionButtonLabel "New Route"
         }
 
 
@@ -612,8 +738,8 @@ tickDateFormatter =
         ]
 
 
-viewRoute : DatePickerData -> RowData -> Element.Element FrontendMsg
-viewRoute datePickerData rd =
+viewRoute : RowData -> Element.Element FrontendMsg
+viewRoute rd =
     Element.column [ Element.spacing 5 ]
         ([ viewRouteOneline rd.route ]
             |> listAppendIf rd.expanded (viewRouteExpanded rd.route rd.datePickerData)
@@ -667,22 +793,6 @@ viewRouteExpandedSolid rd =
             , label = actionButtonLabel "Edit"
             }
         ]
-
-
-climbTypeToString : ClimbType -> String
-climbTypeToString ct =
-    case ct of
-        Trad ->
-            "Trad"
-
-        Sport ->
-            "Sport"
-
-        Mix ->
-            "Mix"
-
-        Boulder ->
-            "Boulder"
 
 
 viewRouteExpandedEdit : RouteData -> DatePickerData -> Element.Element FrontendMsg
