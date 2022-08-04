@@ -1,6 +1,7 @@
 module Route exposing (..)
 
 import Time
+import Date
 
 type RouteId
     = RouteId Int
@@ -19,7 +20,7 @@ type alias RouteData =
     , area : String
     , grade : String
     , notes : String
-    , tickDate : Maybe Time.Posix
+    , tickDate2 : Maybe Date.Date
     , type_ : ClimbType
     , id : RouteId
     }
@@ -30,7 +31,7 @@ type alias NewRouteData =
     , area : String
     , grade : String
     , notes : String
-    , tickDate : Maybe Time.Posix
+    , tickDate2 : Maybe Date.Date
     , type_ : ClimbType
     }
 
@@ -41,7 +42,7 @@ type alias CommonRouteData a =
         , area : String
         , grade : String
         , notes : String
-        , tickDate : Maybe Time.Posix
+        , tickDate2 : Maybe Date.Date
         , type_ : ClimbType
     }
 
@@ -55,7 +56,7 @@ commonToExistingRoute id common =
     , area = common.area
     , grade = common.grade
     , notes = common.notes
-    , tickDate = common.tickDate
+    , tickDate2 = common.tickDate2
     , type_ = common.type_
     }
 

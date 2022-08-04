@@ -33,7 +33,7 @@ init =
       , routes =
             [ { name = "Centralpelaren"
               , grade = "6+"
-              , tickDate = Just <| Time.millisToPosix 0
+              , tickDate2 = Nothing
               , notes = "Kul, bra säkringar :)"
               , id = RouteId 1
               , area = "Utby"
@@ -41,7 +41,7 @@ init =
               }
             , { name = "Hokus pokus"
               , grade = "4+"
-              , tickDate = Just <| Time.millisToPosix 100000
+              , tickDate2 = Nothing
               , notes = "Kul, dåliga säkringar :("
               , id = RouteId 2
               , area = "Utby"
@@ -49,7 +49,7 @@ init =
               }
             , { name = "Bokus Dokus"
               , grade = "3+"
-              , tickDate = Just <| Time.millisToPosix 1000000
+              , tickDate2 = Nothing
               , notes = "Vilken fest"
               , id = RouteId 3
               , area = "Utby"

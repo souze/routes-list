@@ -2,15 +2,19 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav exposing (Key)
+import Date
 import DateFormat
+import DatePicker
 import Element
 import Element.Background
 import Element.Font
 import Element.Input
 import Lamdera
 import List.Extra
+import Maybe.Extra
 import Random
 import Route exposing (..)
+import Task
 import Time
 import ToBackendMsg
 import Types exposing (..)
@@ -37,22 +41,25 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
+      , newRouteDatePickerData = defaultDatePickerData
+      , currentDate = Date.fromCalendarDate 2022 Time.Aug 1
       , newRouteData =
             Just
                 { name = "hux"
                 , grade = "3"
-                , tickDate = Just <| Time.millisToPosix 0
+                , tickDate2 = Nothing
                 , notes = "Lajbans"
                 , area = "Utby"
                 , type_ = Trad
                 }
       , rows =
             [ { expanded = True
+              , datePickerData = defaultDatePickerData
               , route =
                     RouteDataEdit
                         { name = "Centralpelaren"
                         , grade = "6+"
-                        , tickDate = Just <| Time.millisToPosix 0
+                        , tickDate2 = Nothing
                         , notes = "Kul, bra säkringar :)"
                         , id = RouteId 14
                         , area = "Utby"
@@ -61,11 +68,12 @@ init url key =
                         Nothing
               }
             , { expanded = False
+              , datePickerData = defaultDatePickerData
               , route =
                     RouteDataEdit
                         { name = "Hokus pokus"
                         , grade = "4+"
-                        , tickDate = Just <| Time.millisToPosix 100000
+                        , tickDate2 = Nothing
                         , notes = "Kul, dåliga säkringar :("
                         , id = RouteId 13
                         , area = "Utby"
@@ -74,11 +82,12 @@ init url key =
                         Nothing
               }
             , { expanded = True
+              , datePickerData = defaultDatePickerData
               , route =
                     RouteDataEdit
                         { name = "Bokus Dokus"
                         , grade = "3+"
-                        , tickDate = Just <| Time.millisToPosix 1000000
+                        , tickDate2 = Nothing
                         , notes = "Vilken fest"
                         , area = "Utby"
                         , type_ = Trad
@@ -87,7 +96,7 @@ init url key =
                         (Just
                             { name = "Bokus Dokus"
                             , grade = "3+"
-                            , tickDate = Just <| Time.millisToPosix 1000000
+                            , tickDate2 = Nothing
                             , notes = "Vilken fest"
                             , area = "Utby"
                             , type_ = Trad
@@ -97,13 +106,39 @@ init url key =
               }
             ]
       }
-    , Cmd.none
+    , Task.perform SetCurrentDate Date.today
     )
+
+
+defaultDatePickerData : DatePickerData
+defaultDatePickerData =
+    { dateText = ""
+    , pickerModel = DatePicker.init
+    }
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        SetCurrentDate date ->
+            let
+                dpd : DatePickerData
+                dpd =
+                    model.newRouteDatePickerData
+            in
+            ( { model
+                | currentDate = date
+                , newRouteDatePickerData = { dpd | pickerModel = dpd.pickerModel |> DatePicker.setToday date }
+                , rows = model.rows |> newRouteAnnouncementForAllRows date
+              }
+            , Cmd.none
+            )
+
+        DatePickerUpdate routeId updateEvent ->
+            ( updateDatePicker routeId updateEvent model
+            , Cmd.none
+            )
+
         CreateNewRoute ->
             createNewRoute model
 
@@ -153,6 +188,105 @@ update msg model =
             ( routeUpdated id getter newValue model, Cmd.none )
 
 
+newRouteAnnouncementForAllRows : Date.Date -> List RowData -> List RowData
+newRouteAnnouncementForAllRows date rows =
+    rows
+        |> List.map
+            (\r ->
+                let
+                    dpd : DatePickerData
+                    dpd =
+                        r.datePickerData
+                in
+                { r
+                    | datePickerData =
+                        { dpd
+                            | pickerModel = dpd.pickerModel |> DatePicker.setToday date
+                            , dateText =
+                                r.route.realRoute.tickDate2
+                                    |> Maybe.map Date.toIsoString
+                                    |> Maybe.withDefault ""
+                        }
+                }
+            )
+
+
+updateDatePicker : RouteIdOrNew -> DatePicker.ChangeEvent -> Model -> Model
+updateDatePicker routeId changeEvent model =
+    case routeId of
+        NewRouteId ->
+            case model.newRouteData of
+                Just newRouteData ->
+                    let
+                        nrd =
+                            newRouteData
+
+                        ( newDate, newDpd ) =
+                            updateDatePickerData changeEvent nrd.tickDate2 model.newRouteDatePickerData
+                    in
+                    { model
+                        | newRouteDatePickerData = newDpd
+                        , newRouteData = Just { nrd | tickDate2 = newDate }
+                    }
+
+                Nothing ->
+                    -- Strange, why was the date picker updated when not visible?
+                    model
+
+        ExistingRoute id ->
+            { model | rows = mapRowWithRouteId id (updateDateTickerInRow changeEvent) model.rows }
+
+
+updateDateTickerInRow : DatePicker.ChangeEvent -> RowData -> RowData
+updateDateTickerInRow changeEvent rd =
+    let
+        route : RouteDataEdit
+        route =
+            rd.route
+
+        editRoute : Maybe RouteData
+        editRoute =
+            rd.route.editRoute
+
+        ( newDate, newDpd ) =
+            updateDatePickerData
+                changeEvent
+                (rd.route.editRoute |> Maybe.map .tickDate2 |> Maybe.Extra.join)
+                rd.datePickerData
+    in
+    { rd
+        | datePickerData = newDpd
+        , route = { route | editRoute = editRoute |> Maybe.map (\r -> { r | tickDate2 = newDate }) }
+    }
+
+
+updateDatePickerData : DatePicker.ChangeEvent -> Maybe Date.Date -> DatePickerData -> ( Maybe Date.Date, DatePickerData )
+updateDatePickerData changeEvent currentDatePicked dpd =
+    case changeEvent of
+        DatePicker.DateChanged date ->
+            ( Just date
+            , { dpd
+                | dateText = Date.toIsoString date
+              }
+            )
+
+        DatePicker.TextChanged text ->
+            ( Date.fromIsoString text
+                |> Result.toMaybe
+                |> Maybe.Extra.orElse currentDatePicked
+            , { dpd | dateText = text }
+            )
+
+        DatePicker.PickerChanged subMsg ->
+            ( currentDatePicked
+            , { dpd
+                | pickerModel =
+                    dpd.pickerModel
+                        |> DatePicker.update subMsg
+              }
+            )
+
+
 createNewRoute : Model -> ( Model, Cmd msg )
 createNewRoute model =
     case model.newRouteData of
@@ -182,7 +316,7 @@ initialNewRoute : NewRouteData
 initialNewRoute =
     { name = ""
     , grade = ""
-    , tickDate = Just <| Time.millisToPosix 0
+    , tickDate2 = Nothing
     , area = ""
     , type_ = Trad
     , notes = ""
@@ -310,7 +444,11 @@ updateFromBackend msg model =
             ( model, Cmd.none )
 
         AllRoutesAnnouncement routes ->
-            ( setRoutesReceivedFromBackend routes model, Cmd.none )
+            ( model
+                |> setRoutesReceivedFromBackend routes
+                |> (\m -> { m | rows = newRouteAnnouncementForAllRows model.currentDate m.rows })
+            , Cmd.none
+            )
 
 
 setRoutesReceivedFromBackend : List RouteData -> Model -> Model
@@ -324,6 +462,7 @@ toFrontendRowData routes =
         |> List.map
             (\route ->
                 { expanded = False
+                , datePickerData = defaultDatePickerData
                 , route =
                     { realRoute = route
                     , editRoute = Nothing
@@ -348,17 +487,17 @@ viewCols model =
             [ [ viewAddRouteButton ]
             , case model.newRouteData of
                 Just newRouteData ->
-                    [ viewNewRoute newRouteData ]
+                    [ viewNewRoute newRouteData model.newRouteDatePickerData ]
 
                 Nothing ->
                     []
-            , List.map viewRoute model.rows
+            , List.map (viewRoute model.newRouteDatePickerData) model.rows
             ]
 
 
-viewNewRoute : NewRouteData -> Element.Element FrontendMsg
-viewNewRoute newRouteData =
-    viewExistingOrNewRouteExpanded NewRouteId newRouteData
+viewNewRoute : NewRouteData -> DatePickerData -> Element.Element FrontendMsg
+viewNewRoute newRouteData datePickerData =
+    viewExistingOrNewRouteExpanded NewRouteId newRouteData datePickerData
 
 
 viewAddRouteButton : Element.Element FrontendMsg
@@ -380,11 +519,11 @@ tickDateFormatter =
         ]
 
 
-viewRoute : RowData -> Element.Element FrontendMsg
-viewRoute rd =
+viewRoute : DatePickerData -> RowData -> Element.Element FrontendMsg
+viewRoute datePickerData rd =
     Element.column [ Element.spacing 5 ]
         ([ viewRouteOneline rd.route ]
-            |> listAppendIf rd.expanded (viewRouteExpanded rd.route)
+            |> listAppendIf rd.expanded (viewRouteExpanded rd.route rd.datePickerData)
         )
 
 
@@ -397,11 +536,11 @@ listAppendIf pred item list =
         list
 
 
-viewRouteExpanded : RouteDataEdit -> Element.Element FrontendMsg
-viewRouteExpanded routeDataEdit =
+viewRouteExpanded : RouteDataEdit -> DatePickerData -> Element.Element FrontendMsg
+viewRouteExpanded routeDataEdit datePickerData =
     case routeDataEdit.editRoute of
         Just editRoute ->
-            viewRouteExpandedEdit editRoute
+            viewRouteExpandedEdit editRoute datePickerData
 
         Nothing ->
             viewRouteExpandedSolid routeDataEdit.realRoute
@@ -423,9 +562,9 @@ viewRouteExpandedSolid rd =
         , Element.text <| "Area: " ++ rd.area
         , Element.text <| "Grade: " ++ rd.grade
         , Element.text <| "Type: " ++ climbTypeToString rd.type_
-        , case rd.tickDate of
+        , case rd.tickDate2 of
             Just tickdate ->
-                Element.text <| "Tickdate: " ++ tickDateFormatter Time.utc tickdate
+                Element.text <| "Tickdate: " ++ Date.toIsoString tickdate
 
             Nothing ->
                 Element.text <| "Not climbed"
@@ -453,9 +592,9 @@ climbTypeToString ct =
             "Boulder"
 
 
-viewRouteExpandedEdit : RouteData -> Element.Element FrontendMsg
-viewRouteExpandedEdit rd =
-    viewExistingOrNewRouteExpanded (ExistingRoute rd.id) rd
+viewRouteExpandedEdit : RouteData -> DatePickerData -> Element.Element FrontendMsg
+viewRouteExpandedEdit rd datePickerData =
+    viewExistingOrNewRouteExpanded (ExistingRoute rd.id) rd datePickerData
 
 
 actionButtonLabel : String -> Element.Element msg
@@ -463,8 +602,8 @@ actionButtonLabel text =
     Element.el [ Element.Background.color (Element.rgb 0.6 0.6 0.6), Element.padding 8 ] (Element.text text)
 
 
-viewExistingOrNewRouteExpanded : RouteIdOrNew -> CommonRouteData a -> Element.Element FrontendMsg
-viewExistingOrNewRouteExpanded maybeId rd =
+viewExistingOrNewRouteExpanded : RouteIdOrNew -> CommonRouteData a -> DatePickerData -> Element.Element FrontendMsg
+viewExistingOrNewRouteExpanded maybeId rd datePickerData =
     let
         onelineEdit : String -> String -> String -> Element.Element FrontendMsg
         onelineEdit name prettyName value =
@@ -479,6 +618,17 @@ viewExistingOrNewRouteExpanded maybeId rd =
         [ onelineEdit "name" "Name" rd.name
         , onelineEdit "area" "Area" rd.area
         , onelineEdit "grade" "Grade" rd.grade
+        , DatePicker.input []
+            { onChange = DatePickerUpdate maybeId
+            , selected = rd.tickDate2
+            , text = datePickerData.dateText
+            , label =
+                Element.Input.labelLeft [] <|
+                    Element.text "Tickdate"
+            , placeholder = Just <| Element.Input.placeholder [] <| Element.text "yyyy-MM-dd"
+            , settings = DatePicker.defaultSettings
+            , model = datePickerData.pickerModel
+            }
 
         -- , Element.text (tickDateFormatter Time.utc rd.tickDate)
         , Element.Input.multiline []
@@ -533,9 +683,9 @@ viewRouteOneline { realRoute, editRoute } =
                 [ Element.el [ Element.width (Element.px 300) ] <| Element.text rd.name
                 , Element.text rd.grade
                 , Element.text
-                    (case rd.tickDate of
+                    (case rd.tickDate2 of
                         Just tickDate ->
-                            tickDateFormatter Time.utc tickDate
+                            Date.toIsoString tickDate
 
                         Nothing ->
                             "Not climbed"

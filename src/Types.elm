@@ -1,13 +1,15 @@
 module Types exposing (..)
 
+import BackendMsg
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
+import Date exposing (Date)
+import DatePicker
 import Lamdera
-import Time
-import Url exposing (Url)
-import BackendMsg
-import ToBackendMsg
 import Route exposing (..)
+import Time
+import ToBackendMsg
+import Url exposing (Url)
 
 
 type alias FrontendModel =
@@ -15,11 +17,20 @@ type alias FrontendModel =
     , message : String
     , rows : List RowData
     , newRouteData : Maybe NewRouteData
+    , newRouteDatePickerData : DatePickerData
+    , currentDate : Date
+    }
+
+
+type alias DatePickerData =
+    { dateText : String
+    , pickerModel : DatePicker.Model
     }
 
 
 type alias RowData =
     { expanded : Bool
+    , datePickerData : DatePickerData
     , route : RouteDataEdit
     }
 
@@ -41,6 +52,8 @@ type FrontendMsg
     | EditRouteUpdated RouteIdOrNew String String
     | NewRouteButtonPressed
     | CreateNewRoute
+    | SetCurrentDate Date
+    | DatePickerUpdate RouteIdOrNew DatePicker.ChangeEvent
     | NoOpFrontendMsg
 
 
@@ -51,9 +64,13 @@ type ToBackend
     | NoOpToBackend
 
 
-type alias BackendMsg = BackendMsg.BackendMsg
-    -- = ClientConnected Lamdera.SessionId Lamdera.ClientId
-    -- | NoOpBackendMsg
+type alias BackendMsg =
+    BackendMsg.BackendMsg
+
+
+
+-- = ClientConnected Lamdera.SessionId Lamdera.ClientId
+-- | NoOpBackendMsg
 
 
 type ToFrontend

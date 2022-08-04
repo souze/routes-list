@@ -1,7 +1,8 @@
 
 # todos
 
-* All route fields editable
+* view wishlist
+* view log
 * json view
 * json input
 * login
