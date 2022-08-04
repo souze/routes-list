@@ -2,13 +2,14 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav exposing (Key)
-import Date
+import Date exposing (Date)
 import DateFormat
 import DatePicker
 import Element
 import Element.Background
 import Element.Font
 import Element.Input
+import Html exposing (a)
 import Lamdera
 import List.Extra
 import Maybe.Extra
@@ -41,17 +42,20 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
+      , viewFilter = ViewAll
       , newRouteDatePickerData = defaultDatePickerData
       , currentDate = Date.fromCalendarDate 2022 Time.Aug 1
       , newRouteData =
-            Just
-                { name = "hux"
-                , grade = "3"
-                , tickDate2 = Nothing
-                , notes = "Lajbans"
-                , area = "Utby"
-                , type_ = Trad
-                }
+            Nothing
+
+      -- Just
+      --     { name = "hux"
+      --     , grade = "3"
+      --     , tickDate2 = Nothing
+      --     , notes = "Lajbans"
+      --     , area = "Utby"
+      --     , type_ = Trad
+      --     }
       , rows =
             [ { expanded = True
               , datePickerData = defaultDatePickerData
@@ -120,6 +124,21 @@ defaultDatePickerData =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        ViewAllButtonPressed ->
+            ( { model | viewFilter = Types.ViewAll }
+            , Cmd.none
+            )
+
+        WishlistButtonPressed ->
+            ( { model | viewFilter = Types.ViewWishlist }
+            , Cmd.none
+            )
+
+        LogButtonPressed ->
+            ( { model | viewFilter = Types.ViewLog }
+            , Cmd.none
+            )
+
         SetCurrentDate date ->
             let
                 dpd : DatePickerData
@@ -188,7 +207,7 @@ update msg model =
             ( routeUpdated id getter newValue model, Cmd.none )
 
 
-newRouteAnnouncementForAllRows : Date.Date -> List RowData -> List RowData
+newRouteAnnouncementForAllRows : Date -> List RowData -> List RowData
 newRouteAnnouncementForAllRows date rows =
     rows
         |> List.map
@@ -260,7 +279,7 @@ updateDateTickerInRow changeEvent rd =
     }
 
 
-updateDatePickerData : DatePicker.ChangeEvent -> Maybe Date.Date -> DatePickerData -> ( Maybe Date.Date, DatePickerData )
+updateDatePickerData : DatePicker.ChangeEvent -> Maybe Date -> DatePickerData -> ( Maybe Date, DatePickerData )
 updateDatePickerData changeEvent currentDatePicked dpd =
     case changeEvent of
         DatePicker.DateChanged date ->
@@ -484,27 +503,101 @@ viewCols : Model -> Element.Element FrontendMsg
 viewCols model =
     Element.column [ Element.spacing 10, Element.padding 20 ] <|
         List.concat
-            [ [ viewAddRouteButton ]
+            [ [ viewTopRowButtons ]
             , case model.newRouteData of
                 Just newRouteData ->
                     [ viewNewRoute newRouteData model.newRouteDatePickerData ]
 
                 Nothing ->
                     []
-            , List.map (viewRoute model.newRouteDatePickerData) model.rows
+            , model.rows
+                |> filterAndSortView model.viewFilter
+                |> List.map (viewRoute model.newRouteDatePickerData)
             ]
 
+
+filterAndSortView : Types.ViewFilter -> List RowData -> List RowData
+filterAndSortView viewFilter rows =
+    let
+        (filter, sorter) = filterAndSorter viewFilter
+    in
+    rows
+        |> List.filter filter
+        |> sorter
+
+filterAndSorter : ViewFilter -> ((RowData -> Bool), (List RowData -> List RowData))
+filterAndSorter viewFilter =
+    case viewFilter of
+        ViewLog ->
+            (\rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isJust
+            , logViewSorter)
+
+        ViewWishlist ->
+            (\rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isNothing
+            , identity)
+
+        ViewAll ->
+            (\_ -> True
+            , identity)
+
+logViewSorter : List RowData -> List RowData
+logViewSorter rows =
+    let
+        sorter : RowData -> RowData -> Order
+        sorter rd1 rd2 =
+            case (rd1.route.realRoute.tickDate2, rd2.route.realRoute.tickDate2) of
+                (Just a, Just b) ->
+                    Date.compare a b
+
+                (Just a, Nothing) ->
+                    LT
+
+                (Nothing, Just b) ->
+                    GT
+
+                _ ->
+                    LT
+    in
+    rows
+        |> List.sortWith sorter
+        |> List.reverse
 
 viewNewRoute : NewRouteData -> DatePickerData -> Element.Element FrontendMsg
 viewNewRoute newRouteData datePickerData =
     viewExistingOrNewRouteExpanded NewRouteId newRouteData datePickerData
 
 
+viewTopRowButtons : Element.Element FrontendMsg
+viewTopRowButtons =
+    Element.row [ Element.spacing 10 ]
+        [ buttonToSendEvent "New Route" NewRouteButtonPressed
+        , buttonToSendEvent "Wishlist" WishlistButtonPressed
+        , buttonToSendEvent "Log" LogButtonPressed
+        , buttonToSendEvent "All" ViewAllButtonPressed
+        ]
+
+
+buttonToSendEvent : String -> FrontendMsg -> Element.Element FrontendMsg
+buttonToSendEvent labelText event =
+    Element.Input.button []
+        { onPress = Just event
+        , label = actionButtonLabel labelText
+        }
+
+
+viewClimbLogButton : Element.Element FrontendMsg
+viewClimbLogButton =
+    Element.Input.button []
+        { onPress = Just <| LogButtonPressed
+        , label = actionButtonLabel "Log"
+        }
+
+
 viewAddRouteButton : Element.Element FrontendMsg
 viewAddRouteButton =
     Element.Input.button []
         { onPress = Just <| NewRouteButtonPressed
-        , label = Element.el [ Element.Background.color (Element.rgb 0.6 0.6 0.6), Element.padding 8 ] (Element.text "New Route")
+        , label = actionButtonLabel "New Route"
         }
 
 

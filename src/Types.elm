@@ -19,7 +19,14 @@ type alias FrontendModel =
     , newRouteData : Maybe NewRouteData
     , newRouteDatePickerData : DatePickerData
     , currentDate : Date
+    , viewFilter : ViewFilter
     }
+
+
+type ViewFilter
+    = ViewAll
+    | ViewLog
+    | ViewWishlist
 
 
 type alias DatePickerData =
@@ -51,6 +58,9 @@ type FrontendMsg
     | EditRouteDiscardChanges RouteId
     | EditRouteUpdated RouteIdOrNew String String
     | NewRouteButtonPressed
+    | WishlistButtonPressed
+    | LogButtonPressed
+    | ViewAllButtonPressed
     | CreateNewRoute
     | SetCurrentDate Date
     | DatePickerUpdate RouteIdOrNew DatePicker.ChangeEvent
