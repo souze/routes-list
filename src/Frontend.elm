@@ -100,6 +100,10 @@ loginPageMessage msg loginPageData model =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        MoreOptionsButtonPressed ->
+            { model | page = MoreOptionsPage }
+                |> withNoCommand
+
         LoginPageMsg loginMsg ->
             case model.page of
                 LoginPage loginPageData ->
@@ -586,7 +590,7 @@ view model =
 
 mainColumn : List (Element.Element FrontendMsg) -> Element.Element FrontendMsg
 mainColumn =
-    Element.column [ Element.spacing 10, Element.padding 20 ]
+    Element.column [ Element.spacing 10, Element.padding 20, Element.width Element.fill ]
 
 
 mainColumnWithToprow : List (Element.Element FrontendMsg) -> Element.Element FrontendMsg
@@ -597,6 +601,13 @@ mainColumnWithToprow items =
 viewMainColumn : Model -> Element.Element FrontendMsg
 viewMainColumn model =
     case model.page of
+        MoreOptionsPage ->
+            mainColumnWithToprow
+                [ buttonToSendEvent "New Route" NewRouteButtonPressed
+                , buttonToSendEvent "Input Json" InputJsonButtonPressed
+                , buttonToSendEvent "View as Json" ViewAsJsonButtonPressed
+                ]
+
         RoutePage viewFilter ->
             mainColumnWithToprow
                 (model.rows
@@ -750,12 +761,10 @@ viewNewRoute newRouteData datePickerData =
 viewTopRowButtons : Element.Element FrontendMsg
 viewTopRowButtons =
     Element.row [ Element.spacing 10 ]
-        [ buttonToSendEvent "New Route" NewRouteButtonPressed
-        , buttonToSendEvent "Wishlist" WishlistButtonPressed
+        [ buttonToSendEvent "Wishlist" WishlistButtonPressed
         , buttonToSendEvent "Log" LogButtonPressed
         , buttonToSendEvent "All" ViewAllButtonPressed
-        , buttonToSendEvent "Input Json" InputJsonButtonPressed
-        , buttonToSendEvent "View as Json" ViewAsJsonButtonPressed
+        , buttonToSendEvent "..." MoreOptionsButtonPressed
         ]
 
 
@@ -780,7 +789,7 @@ tickDateFormatter =
 
 viewRoute : RowData -> Element.Element FrontendMsg
 viewRoute rd =
-    Element.column [ Element.spacing 5 ]
+    Element.column [ Element.spacing 5, Element.width Element.fill ]
         ([ viewRouteOneline rd.route ]
             |> listAppendIf rd.expanded (viewRouteExpanded rd.route rd.datePickerData)
         )
@@ -915,23 +924,27 @@ viewRouteOneline { realRoute, editRoute } =
             realRoute
     in
     Element.Input.button
-        []
+        [ Element.width Element.fill ]
         { onPress = Just <| RouteButtonClicked rd.id
         , label =
             Element.row
                 [ Element.padding 12
                 , Element.spacing 20
                 , Element.Background.color (Element.rgb 0.8 0.8 0.8)
+                , Element.width Element.fill
                 ]
-                [ Element.el [ Element.width (Element.px 300) ] <| Element.text rd.name
-                , Element.text rd.grade
-                , Element.text
-                    (case rd.tickDate2 of
-                        Just tickDate ->
-                            Date.toIsoString tickDate
+                [ Element.el [ Element.width (Element.px 17) ] (Element.text rd.grade)
+                , Element.el [] <| Element.text rd.name
+                , Element.el [ Element.alignRight ]
+                    (Element.text
+                        (case rd.tickDate2 of
+                            Just tickDate ->
+                                Date.toIsoString tickDate
+                                    ++ "☑️"
 
-                        Nothing ->
-                            "Not climbed"
+                            Nothing ->
+                                "⏹️"
+                        )
                     )
                 ]
         }

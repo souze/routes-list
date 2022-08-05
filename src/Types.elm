@@ -28,6 +28,7 @@ type Page
     | InputJsonPage String (Maybe JsonError)
     | ViewJsonPage
     | LoginPage LoginPageData
+    | MoreOptionsPage
 
 
 type alias LoginPageData =
@@ -96,6 +97,7 @@ type FrontendMsg
     | WishlistButtonPressed
     | LogButtonPressed
     | ViewAllButtonPressed
+    | MoreOptionsButtonPressed
     | CreateNewRoute
     | SetCurrentDate Date
     | DatePickerUpdate RouteIdOrNew DatePicker.ChangeEvent
