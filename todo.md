@@ -2,4 +2,4 @@
 # todos
 
 * sort order
-* login
+* login from env and sha1

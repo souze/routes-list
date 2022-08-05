@@ -1,6 +1,7 @@
 module Backend exposing (..)
 
 import BackendMsg
+import Dict exposing (Dict)
 import Html
 import Lamdera exposing (ClientId, SessionId)
 import List.Extra
@@ -24,7 +25,10 @@ app =
 
 subscriptions : Model -> Sub BackendMsg
 subscriptions model =
-    Lamdera.onConnect BackendMsg.ClientConnected
+    Sub.batch
+        [ Lamdera.onConnect BackendMsg.ClientConnected
+        , Lamdera.onDisconnect BackendMsg.ClientDisconnected
+        ]
 
 
 init : ( Model, Cmd BackendMsg )
@@ -56,6 +60,7 @@ init =
               , type_ = Trad
               }
             ]
+      , sessions = Dict.empty
       }
     , Cmd.none
     )
@@ -67,21 +72,79 @@ update msg model =
         BackendMsg.NoOpBackendMsg ->
             ( model, Cmd.none )
 
-        BackendMsg.ClientConnected _ clientId ->
-            ( model
-            , Lamdera.sendToFrontend clientId <|
-                AllRoutesAnnouncement model.routes
+        BackendMsg.ClientDisconnected sessionId clientId ->
+            ( { model | sessions = model.sessions |> Dict.remove sessionId }
+            , Cmd.none
             )
+
+        BackendMsg.ClientConnected sessionId clientId ->
+            ( { model | sessions = model.sessions |> Dict.insert sessionId initialSessionData }
+            , Lamdera.sendToFrontend clientId <|
+                ToFrontendYourNotLoggedIn
+            )
+
+
+initialSessionData : SessionData
+initialSessionData =
+    { loggedIn = False }
 
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
+    if isLoggedIn sessionId model.sessions then
+        updateFromFrontendLoggedIn msg model
+
+    else
+        updateFromFrontendNotLoggedIn sessionId clientId msg model
+
+
+isLoggedIn : SessionId -> Dict SessionId SessionData -> Bool
+isLoggedIn sessionId sessions =
+    Dict.get sessionId sessions
+        |> Maybe.map .loggedIn
+        |> Maybe.withDefault False
+
+
+setLoggedIn : SessionId -> Dict SessionId SessionData -> Dict SessionId SessionData
+setLoggedIn sessionId sessions =
+    sessions
+        |> Dict.update sessionId
+            (\maybeSd ->
+                maybeSd
+                    |> Maybe.map (\sd -> { sd | loggedIn = True })
+                    |> Maybe.withDefault { initialSessionData | loggedIn = True }
+                    |> Just
+            )
+
+
+updateFromFrontendNotLoggedIn : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontendNotLoggedIn sessionId clientId msg model =
+    case msg of
+        ToBackendLogIn username password ->
+            if username == "erik" && password == "secret" then
+                ( { model | sessions = model.sessions |> setLoggedIn sessionId }
+                , Lamdera.broadcast <|
+                    AllRoutesAnnouncement model.routes
+                )
+
+            else
+                ( model, Lamdera.sendToFrontend clientId <| ToFrontendWrongUserNamePassword )
+
+        _ ->
+            ( model, Lamdera.sendToFrontend clientId <| ToFrontendYourNotLoggedIn )
+
+
+updateFromFrontendLoggedIn : ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontendLoggedIn msg model =
     case msg of
         ToBackendResetRouteList newRoutes ->
             let
-                newModel = model
-                    |> \m -> { m | routes = [] }
-                    |> addNewRouteList newRoutes
+                newModel =
+                    model
+                        |> (\m ->
+                                { m | routes = [] }
+                                    |> addNewRouteList newRoutes
+                           )
             in
             ( newModel
             , Lamdera.broadcast <|
@@ -120,6 +183,10 @@ updateFromFrontend sessionId clientId msg model =
             , Lamdera.broadcast <|
                 AllRoutesAnnouncement newModel.routes
             )
+
+        ToBackendLogIn _ _ ->
+            -- I'm already logged in
+            ( model, Cmd.none )
 
         NoOpToBackend ->
             ( model, Cmd.none )

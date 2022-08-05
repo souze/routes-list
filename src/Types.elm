@@ -5,6 +5,7 @@ import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Date exposing (Date)
 import DatePicker
+import Dict exposing (Dict)
 import Lamdera
 import Route exposing (..)
 import Time
@@ -26,8 +27,16 @@ type Page
     | NewRoutePage { routeData : NewRouteData, datePickerData : DatePickerData }
     | InputJsonPage String (Maybe JsonError)
     | ViewJsonPage
+    | LoginPage LoginPageData
 
-type alias JsonError = String
+
+type alias LoginPageData =
+    { username : String, password : String }
+
+
+type alias JsonError =
+    String
+
 
 type ViewFilter
     = ViewAll
@@ -51,12 +60,28 @@ type alias RowData =
 type alias BackendModel =
     { routes : List RouteData
     , nextId : RouteId
+    , sessions : Dict Lamdera.SessionId SessionData
     }
+
+
+type alias SessionData =
+    { loggedIn : Bool }
+
+
+type LoginFieldType
+    = FieldTypeUsername
+    | FieldTypePassword
+
+
+type LoginPageMsg
+    = LoginPageFieldChange LoginFieldType String
+    | LoginPageSubmit
 
 
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
+    | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
     | ViewAsJsonButtonPressed
     | RouteButtonClicked RouteId
@@ -82,6 +107,7 @@ type ToBackend
     | RemoveRoute RouteId
     | ToBackendCreateNewRoute NewRouteData
     | ToBackendResetRouteList (List NewRouteData)
+    | ToBackendLogIn String String
     | NoOpToBackend
 
 
@@ -96,4 +122,6 @@ type alias BackendMsg =
 
 type ToFrontend
     = AllRoutesAnnouncement (List RouteData)
+    | ToFrontendWrongUserNamePassword
+    | ToFrontendYourNotLoggedIn
     | NoOpToFrontend

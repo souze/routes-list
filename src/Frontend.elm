@@ -46,61 +46,9 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
-      , page = RoutePage ViewAll
+      , page = LoginPage emptyLoginPageData
       , currentDate = Date.fromCalendarDate 2022 Time.Aug 1
-      , rows =
-            [ { expanded = True
-              , datePickerData = defaultDatePickerData
-              , route =
-                    RouteDataEdit
-                        { name = "Centralpelaren"
-                        , grade = "6+"
-                        , tickDate2 = Nothing
-                        , notes = "Kul, bra säkringar :)"
-                        , id = RouteId 14
-                        , area = "Utby"
-                        , type_ = Trad
-                        }
-                        Nothing
-              }
-            , { expanded = False
-              , datePickerData = defaultDatePickerData
-              , route =
-                    RouteDataEdit
-                        { name = "Hokus pokus"
-                        , grade = "4+"
-                        , tickDate2 = Nothing
-                        , notes = "Kul, dåliga säkringar :("
-                        , id = RouteId 13
-                        , area = "Utby"
-                        , type_ = Trad
-                        }
-                        Nothing
-              }
-            , { expanded = True
-              , datePickerData = defaultDatePickerData
-              , route =
-                    RouteDataEdit
-                        { name = "Bokus Dokus"
-                        , grade = "3+"
-                        , tickDate2 = Nothing
-                        , notes = "Vilken fest"
-                        , area = "Utby"
-                        , type_ = Trad
-                        , id = RouteId 11
-                        }
-                        (Just
-                            { name = "Bokus Dokus"
-                            , grade = "3+"
-                            , tickDate2 = Nothing
-                            , notes = "Vilken fest"
-                            , area = "Utby"
-                            , type_ = Trad
-                            , id = RouteId 12
-                            }
-                        )
-              }
-            ]
+      , rows = []
       }
     , Task.perform SetCurrentDate Date.today
     )
@@ -120,9 +68,46 @@ defaultDatePickerDataWithToday today =
     }
 
 
+withNoCommand : Model -> ( Model, Cmd FrontendMsg )
+withNoCommand m =
+    ( m, Cmd.none )
+
+
+loginPageMessage : LoginPageMsg -> LoginPageData -> Model -> ( Model, Cmd FrontendMsg )
+loginPageMessage msg loginPageData model =
+    case msg of
+        LoginPageFieldChange fieldType newValue ->
+            let
+                newLpd : LoginPageData
+                newLpd =
+                    case fieldType of
+                        FieldTypeUsername ->
+                            { loginPageData | username = newValue }
+
+                        FieldTypePassword ->
+                            { loginPageData | password = newValue }
+            in
+            { model | page = LoginPage newLpd }
+                |> withNoCommand
+
+        LoginPageSubmit ->
+            ( model
+            , Lamdera.sendToBackend <|
+                ToBackendLogIn loginPageData.username loginPageData.password
+            )
+
+
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        LoginPageMsg loginMsg ->
+            case model.page of
+                LoginPage loginPageData ->
+                    loginPageMessage loginMsg loginPageData model
+
+                _ ->
+                    ( model, Cmd.none )
+
         JsonInputSubmitButtonPressed ->
             case model.page of
                 InputJsonPage text _ ->
@@ -536,16 +521,36 @@ toggleExpansionRouteId id m =
     }
 
 
+emptyLoginPageData : LoginPageData
+emptyLoginPageData =
+    { username = "", password = "" }
+
+
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =
     case msg of
         NoOpToFrontend ->
             ( model, Cmd.none )
 
+        ToFrontendWrongUserNamePassword ->
+            ( { model | page = LoginPage emptyLoginPageData }
+            , Cmd.none
+            )
+
+        ToFrontendYourNotLoggedIn ->
+            ( { model | page = LoginPage emptyLoginPageData }
+            , Cmd.none
+            )
+
         AllRoutesAnnouncement routes ->
             ( model
                 |> setRoutesReceivedFromBackend routes
-                |> (\m -> { m | rows = newRouteAnnouncementForAllRows model.currentDate m.rows })
+                |> (\m ->
+                        { m
+                            | rows = newRouteAnnouncementForAllRows model.currentDate m.rows
+                            , page = RoutePage ViewAll
+                        }
+                   )
             , Cmd.none
             )
 
@@ -579,32 +584,65 @@ view model =
     }
 
 
+mainColumn : List (Element.Element FrontendMsg) -> Element.Element FrontendMsg
+mainColumn =
+    Element.column [ Element.spacing 10, Element.padding 20 ]
+
+
+mainColumnWithToprow : List (Element.Element FrontendMsg) -> Element.Element FrontendMsg
+mainColumnWithToprow items =
+    mainColumn (viewTopRowButtons :: items)
+
+
 viewMainColumn : Model -> Element.Element FrontendMsg
 viewMainColumn model =
-    Element.column [ Element.spacing 10, Element.padding 20 ] <|
-        List.concat
-            [ [ viewTopRowButtons ]
-            , case model.page of
-                RoutePage viewFilter ->
-                    model.rows
-                        |> filterAndSortView viewFilter
-                        |> List.map viewRoute
+    case model.page of
+        RoutePage viewFilter ->
+            mainColumnWithToprow
+                (model.rows
+                    |> filterAndSortView viewFilter
+                    |> List.map viewRoute
+                )
 
-                NewRoutePage { routeData, datePickerData } ->
-                    [ viewNewRoute routeData datePickerData ]
+        NewRoutePage { routeData, datePickerData } ->
+            mainColumnWithToprow [ viewNewRoute routeData datePickerData ]
 
-                InputJsonPage text err ->
-                    [ viewJsonInput text ]
-                        ++ (err
-                                |> Maybe.map viewJsonInputError
-                                |> Maybe.Extra.toList
-                           )
-                        ++ [ viewJsonInputSubmitButton ]
+        InputJsonPage text err ->
+            mainColumnWithToprow
+                (viewJsonInput text
+                    :: (err
+                            |> Maybe.map viewJsonInputError
+                            |> Maybe.Extra.toList
+                       )
+                    ++ [ viewJsonInputSubmitButton ]
+                )
 
-                ViewJsonPage ->
-                    [ viewJsonText model.rows ]
+        ViewJsonPage ->
+            mainColumnWithToprow [ viewJsonText model.rows ]
 
-            ]
+        LoginPage loginPageData ->
+            mainColumn <| viewLogin loginPageData
+
+
+viewLogin : LoginPageData -> List (Element.Element FrontendMsg)
+viewLogin data =
+    [ Element.Input.text []
+        { onChange = \s -> LoginPageMsg (LoginPageFieldChange FieldTypeUsername s)
+        , text = data.username
+        , placeholder = Nothing
+        , label = Element.Input.labelLeft [] (Element.text "Username")
+        }
+    , Element.Input.text []
+        { onChange = \s -> LoginPageMsg (LoginPageFieldChange FieldTypePassword s)
+        , text = data.password
+        , placeholder = Nothing
+        , label = Element.Input.labelLeft [] (Element.text "Password")
+        }
+    , Element.Input.button []
+        { onPress = Just <| LoginPageMsg LoginPageSubmit
+        , label = actionButtonLabel "Login"
+        }
+    ]
 
 
 viewJsonText : List RowData -> Element.Element FrontendMsg
@@ -617,11 +655,13 @@ viewJsonText rows =
         , spellcheck = False
         }
 
+
 routeListJsonString : List RowData -> String
 routeListJsonString rows =
-    "[\n" ++
-        (rows |> List.map routeJsonString |> String.join ",\n")
-     ++ "\n]"
+    "[\n"
+        ++ (rows |> List.map routeJsonString |> String.join ",\n")
+        ++ "\n]"
+
 
 routeJsonString : RowData -> String
 routeJsonString row =
