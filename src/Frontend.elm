@@ -7,6 +7,7 @@ import DateFormat
 import DatePicker
 import Element
 import Element.Background
+import Element.Border
 import Element.Font
 import Element.Input
 import Html exposing (a)
@@ -37,9 +38,15 @@ app =
         , onUrlChange = UrlChanged
         , update = update
         , updateFromBackend = updateFromBackend
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         , view = view
         }
+
+
+subscriptions : Model -> Sub FrontendMsg
+subscriptions model =
+    -- Refresh session every hour
+    Time.every (1000 * 60 * 60) SendRefreshSessionToBackend
 
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
@@ -100,6 +107,11 @@ loginPageMessage msg loginPageData model =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        SendRefreshSessionToBackend _ ->
+            ( model
+            , Lamdera.sendToBackend <| ToBackendRefreshSession
+            )
+
         MoreOptionsButtonPressed ->
             { model | page = MoreOptionsPage }
                 |> withNoCommand
@@ -820,6 +832,7 @@ expandRouteColumn =
         [ Element.padding 12
         , Element.spacing 20
         , Element.Background.color (Element.rgb 0.75 0.8 0.8)
+        , Element.width Element.fill
         ]
 
 
@@ -832,11 +845,23 @@ viewRouteExpandedSolid rd =
         , Element.text <| "Type: " ++ climbTypeToString rd.type_
         , case rd.tickDate2 of
             Just tickdate ->
-                Element.text <| "Tickdate: " ++ Date.toIsoString tickdate
+                Element.text <| "Climbed on " ++ Date.toIsoString tickdate
 
             Nothing ->
                 Element.text <| "Not climbed"
-        , Element.text <| "Notes:\n---\n" ++ rd.notes
+
+        -- , Element.text <| "Notes:\n---\n" ++ rd.notes
+        , if rd.notes /= "" then
+            Element.paragraph
+                [ Element.Border.solid
+                , Element.Border.width 2
+                , Element.Border.color (Element.rgb 0.5 0.5 0.5)
+                , Element.padding 7
+                ]
+                [ Element.text <| rd.notes ]
+
+          else
+            Element.none
         , Element.Input.button []
             { onPress = Just <| EditRouteEnable rd.id
             , label = actionButtonLabel "Edit"
@@ -881,9 +906,7 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
             , settings = DatePicker.defaultSettings
             , model = datePickerData.pickerModel
             }
-
-        -- , Element.text (tickDateFormatter Time.utc rd.tickDate)
-        , Element.Input.multiline []
+        , Element.Input.multiline [ Element.width Element.fill ]
             { onChange = EditRouteUpdated maybeId "notes"
             , text = rd.notes
             , placeholder = Nothing
@@ -918,7 +941,7 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
 
 
 viewRouteOneline : RouteDataEdit -> Element.Element FrontendMsg
-viewRouteOneline { realRoute, editRoute } =
+viewRouteOneline { realRoute } =
     let
         rd =
             realRoute
@@ -927,7 +950,7 @@ viewRouteOneline { realRoute, editRoute } =
         [ Element.width Element.fill ]
         { onPress = Just <| RouteButtonClicked rd.id
         , label =
-            Element.row
+            Element.wrappedRow
                 [ Element.padding 12
                 , Element.spacing 20
                 , Element.Background.color (Element.rgb 0.8 0.8 0.8)
@@ -935,12 +958,15 @@ viewRouteOneline { realRoute, editRoute } =
                 ]
                 [ Element.el [ Element.width (Element.px 17) ] (Element.text rd.grade)
                 , Element.el [] <| Element.text rd.name
+                , rd.tickDate2
+                    |> Maybe.map
+                        (\tickDate -> Element.el [ Element.alignRight ] (Element.text (Date.toIsoString tickDate)))
+                    |> Maybe.withDefault Element.none
                 , Element.el [ Element.alignRight ]
                     (Element.text
                         (case rd.tickDate2 of
-                            Just tickDate ->
-                                Date.toIsoString tickDate
-                                    ++ "☑️"
+                            Just _ ->
+                                "☑️"
 
                             Nothing ->
                                 "⏹️"

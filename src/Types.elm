@@ -62,11 +62,13 @@ type alias BackendModel =
     { routes : List RouteData
     , nextId : RouteId
     , sessions : Dict Lamdera.SessionId SessionData
+    , currentTime : Time.Posix
     }
 
 
 type alias SessionData =
-    { loggedIn : Bool }
+    { loggedIn : Bool
+    , lastTouched: Time.Posix }
 
 
 type LoginFieldType
@@ -101,6 +103,7 @@ type FrontendMsg
     | CreateNewRoute
     | SetCurrentDate Date
     | DatePickerUpdate RouteIdOrNew DatePicker.ChangeEvent
+    | SendRefreshSessionToBackend Time.Posix
     | NoOpFrontendMsg
 
 
@@ -110,6 +113,7 @@ type ToBackend
     | ToBackendCreateNewRoute NewRouteData
     | ToBackendResetRouteList (List NewRouteData)
     | ToBackendLogIn String String
+    | ToBackendRefreshSession
     | NoOpToBackend
 
 

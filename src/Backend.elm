@@ -2,10 +2,11 @@ module Backend exposing (..)
 
 import BackendMsg
 import Dict exposing (Dict)
-import Html
 import Lamdera exposing (ClientId, SessionId)
 import List.Extra
+import Process
 import Route exposing (..)
+import Task
 import Time
 import Types exposing (..)
 
@@ -28,12 +29,16 @@ subscriptions model =
     Sub.batch
         [ Lamdera.onConnect BackendMsg.ClientConnected
         , Lamdera.onDisconnect BackendMsg.ClientDisconnected
+
+        -- Clear out old sessions every day
+        , Time.every (1000 * 60 * 60 * 24) BackendMsg.ClockTick
         ]
 
 
 init : ( Model, Cmd BackendMsg )
 init =
     ( { nextId = Route.firstId
+      , currentTime = Time.millisToPosix 0
       , routes =
             [ { name = "Centralpelaren"
               , grade = "6+"
@@ -62,8 +67,13 @@ init =
             ]
       , sessions = Dict.empty
       }
-    , Cmd.none
+    , Time.now |> Task.perform BackendMsg.ClockTick
     )
+
+
+withNoCommand : Model -> ( Model, Cmd BackendMsg )
+withNoCommand model =
+    ( model, Cmd.none )
 
 
 update : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
@@ -72,27 +82,45 @@ update msg model =
         BackendMsg.NoOpBackendMsg ->
             ( model, Cmd.none )
 
-        BackendMsg.ClientDisconnected sessionId clientId ->
-            ( { model | sessions = model.sessions |> Dict.remove sessionId }
+        BackendMsg.ClockTick time ->
+            ( { model
+                | currentTime = time
+                , sessions = model.sessions |> removeOldSessions time
+              }
+            , Cmd.none
+            )
+
+        BackendMsg.ClientDisconnected _ _ ->
+            ( model
             , Cmd.none
             )
 
         BackendMsg.ClientConnected sessionId clientId ->
-            ( { model | sessions = model.sessions |> Dict.insert sessionId initialSessionData }
-            , Lamdera.sendToFrontend clientId <|
-                ToFrontendYourNotLoggedIn
+            ( { model | sessions = model.sessions |> touchSession model.currentTime sessionId }
+            , if isLoggedIn sessionId model.sessions then
+                Lamdera.sendToFrontend clientId <| AllRoutesAnnouncement model.routes
+              else
+                Lamdera.sendToFrontend clientId <|
+                    ToFrontendYourNotLoggedIn
             )
+
+
+removeOldSessions : Time.Posix -> Dict SessionId SessionData -> Dict SessionId SessionData
+removeOldSessions time =
+    Dict.filter (\_ { lastTouched } -> Time.posixToMillis lastTouched > (Time.posixToMillis time - 10000))
 
 
 initialSessionData : SessionData
 initialSessionData =
-    { loggedIn = False }
+    { loggedIn = False
+    , lastTouched = Time.millisToPosix 0
+    }
 
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
     if isLoggedIn sessionId model.sessions then
-        updateFromFrontendLoggedIn msg model
+        updateFromFrontendLoggedIn sessionId msg model
 
     else
         updateFromFrontendNotLoggedIn sessionId clientId msg model
@@ -117,12 +145,29 @@ setLoggedIn sessionId sessions =
             )
 
 
+touchSession : Time.Posix -> SessionId -> Dict SessionId SessionData -> Dict SessionId SessionData
+touchSession time sessionId sessions =
+    sessions
+        |> Dict.update sessionId
+            (\maybeSd ->
+                maybeSd
+                    |> Maybe.map (\sd -> { sd | lastTouched = time })
+                    |> Maybe.withDefault { initialSessionData | lastTouched = time }
+                    |> Just
+            )
+
+
 updateFromFrontendNotLoggedIn : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontendNotLoggedIn sessionId clientId msg model =
     case msg of
         ToBackendLogIn username password ->
             if username == "erik" && password == "secret" then
-                ( { model | sessions = model.sessions |> setLoggedIn sessionId }
+                ( { model
+                    | sessions =
+                        model.sessions
+                            |> setLoggedIn sessionId
+                            |> touchSession model.currentTime sessionId
+                  }
                 , Lamdera.broadcast <|
                     AllRoutesAnnouncement model.routes
                 )
@@ -134,9 +179,13 @@ updateFromFrontendNotLoggedIn sessionId clientId msg model =
             ( model, Lamdera.sendToFrontend clientId <| ToFrontendYourNotLoggedIn )
 
 
-updateFromFrontendLoggedIn : ToBackend -> Model -> ( Model, Cmd BackendMsg )
-updateFromFrontendLoggedIn msg model =
+updateFromFrontendLoggedIn : SessionId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontendLoggedIn sessionId msg model =
     case msg of
+        ToBackendRefreshSession ->
+            { model | sessions = model.sessions |> touchSession model.currentTime sessionId }
+                |> withNoCommand
+
         ToBackendResetRouteList newRoutes ->
             let
                 newModel =
@@ -185,8 +234,10 @@ updateFromFrontendLoggedIn msg model =
             )
 
         ToBackendLogIn _ _ ->
-            -- I'm already logged in
-            ( model, Cmd.none )
+            -- I'm already logged in, announce the routes again
+            ( model
+            , Lamdera.broadcast <| AllRoutesAnnouncement model.routes
+            )
 
         NoOpToBackend ->
             ( model, Cmd.none )
