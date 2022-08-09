@@ -22,7 +22,6 @@ import Random
 import Route exposing (..)
 import Task
 import Time
-import ToBackendMsg
 import Types exposing (..)
 import Url
 
@@ -107,6 +106,24 @@ loginPageMessage msg loginPageData model =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        FrontendMsgGoToPage page ->
+            { model | page = page }
+                |> withNoCommand
+
+        FrontendMsgConfirmButtonPressed ->
+            case model.page of
+                ConfirmPage { text, code, event } ->
+                    if text == code then
+                        ( { model | page = SpinnerPage "Waiting for backend response" }
+                        , Lamdera.sendToBackend event
+                        )
+
+                    else
+                        model |> withNoCommand
+
+                _ ->
+                    model |> withNoCommand
+
         SendRefreshSessionToBackend _ ->
             ( model
             , Lamdera.sendToBackend <| ToBackendRefreshSession
@@ -139,6 +156,9 @@ update msg model =
             ( case model.page of
                 InputJsonPage _ err ->
                     { model | page = InputJsonPage newValue err }
+
+                ConfirmPage { label, code, event } ->
+                    { model | page = ConfirmPage { label = label, text = newValue, code = code, event = event } }
 
                 _ ->
                     -- That's strange, why was the field updated when the page isn't visible?
@@ -240,25 +260,28 @@ trySubmitInputJson text model =
         routesOrError : Result Json.Decode.Error (List NewRouteData)
         routesOrError =
             Json.Decode.decodeString JsonRoute.decodeRouteList text
-
-        statusStr : String
-        statusStr =
-            case routesOrError of
-                Ok routes ->
-                    "Yes!"
-
-                Err err ->
-                    "Err: " ++ Json.Decode.errorToString err
     in
     case routesOrError of
-        Ok routes ->
-            ( { model | page = InputJsonPage text (Just statusStr) }
-            , Lamdera.sendToBackend <|
-                ToBackendResetRouteList routes
+        Ok newRoutes ->
+            ( { model
+                | page =
+                    ConfirmPage
+                        { label =
+                            "Are you sure you want to replace all the current "
+                                ++ String.fromInt (List.length model.rows)
+                                ++ " routes with the "
+                                ++ String.fromInt (List.length newRoutes)
+                                ++ " new routes?"
+                        , text = ""
+                        , code = "replace"
+                        , event = ToBackendResetRouteList newRoutes
+                        }
+              }
+            , Cmd.none
             )
 
         Err err ->
-            ( { model | page = InputJsonPage text (Just statusStr) }
+            ( { model | page = InputJsonPage text (Just (Json.Decode.errorToString err)) }
             , Cmd.none
             )
 
@@ -361,7 +384,6 @@ updateDatePickerData changeEvent currentDatePicked dpd =
         DatePicker.TextChanged text ->
             ( Date.fromIsoString text
                 |> Result.toMaybe
-                |> Maybe.Extra.orElse currentDatePicked
             , { dpd | dateText = text }
             )
 
@@ -610,9 +632,20 @@ mainColumnWithToprow items =
     mainColumn (viewTopRowButtons :: items)
 
 
+wrappingText : String -> Element.Element msg
+wrappingText text =
+    Element.paragraph [] [ Element.text text ]
+
+
 viewMainColumn : Model -> Element.Element FrontendMsg
 viewMainColumn model =
     case model.page of
+        SpinnerPage text ->
+            mainColumn
+                [ wrappingText "<imagine this is a picture of a spinner \u{1FA97}>"
+                , wrappingText text
+                ]
+
         MoreOptionsPage ->
             mainColumnWithToprow
                 [ buttonToSendEvent "New Route" NewRouteButtonPressed
@@ -639,6 +672,23 @@ viewMainColumn model =
                        )
                     ++ [ viewJsonInputSubmitButton ]
                 )
+
+        ConfirmPage { text, label, code } ->
+            mainColumnWithToprow
+                [ Element.textColumn []
+                    [ Element.paragraph []
+                        [ Element.text <| label
+                        ]
+                    , Element.paragraph [] [ Element.text <| "If so, type \"" ++ code ++ "\" in the input field below" ]
+                    ]
+                , Element.Input.text []
+                    { onChange = JsonInputTextChanged
+                    , text = text
+                    , placeholder = Nothing
+                    , label = Element.Input.labelLeft [] (Element.text "Confirm")
+                    }
+                , buttonToSendEvent "Confirm" FrontendMsgConfirmButtonPressed
+                ]
 
         ViewJsonPage ->
             mainColumnWithToprow [ viewJsonText model.rows ]
@@ -899,9 +949,7 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
             { onChange = DatePickerUpdate maybeId
             , selected = rd.tickDate2
             , text = datePickerData.dateText
-            , label =
-                Element.Input.labelLeft [] <|
-                    Element.text "Tickdate"
+            , label = Element.Input.labelLeft [] <| Element.text "Tickdate"
             , placeholder = Just <| Element.Input.placeholder [] <| Element.text "yyyy-MM-dd"
             , settings = DatePicker.defaultSettings
             , model = datePickerData.pickerModel
@@ -916,18 +964,18 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
         , Element.row [ Element.spacing 10 ]
             (case maybeId of
                 ExistingRoute routeId ->
-                    [ Element.Input.button []
-                        { onPress = Just <| EditRouteSave (commonToExistingRoute routeId rd)
-                        , label = actionButtonLabel "Save"
-                        }
-                    , Element.Input.button []
-                        { onPress = Just <| EditRouteDiscardChanges routeId
-                        , label = actionButtonLabel "Discard"
-                        }
-                    , Element.Input.button []
-                        { onPress = Just <| EditRouteRemove routeId
-                        , label = actionButtonLabel "Remove"
-                        }
+                    [ buttonToSendEvent "Save" (EditRouteSave (commonToExistingRoute routeId rd))
+                    , buttonToSendEvent "Discard" (EditRouteDiscardChanges routeId)
+                    , buttonToSendEvent "Remove"
+                        (FrontendMsgGoToPage
+                            (ConfirmPage
+                                { text = ""
+                                , label = "Are you sure you want to remove the route \"" ++ rd.name ++ "\"?"
+                                , code = "remove"
+                                , event = RemoveRoute routeId
+                                }
+                            )
+                        )
                     ]
 
                 NewRouteId ->

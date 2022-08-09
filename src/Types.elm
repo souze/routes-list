@@ -9,7 +9,6 @@ import Dict exposing (Dict)
 import Lamdera
 import Route exposing (..)
 import Time
-import ToBackendMsg
 import Url exposing (Url)
 
 
@@ -26,9 +25,11 @@ type Page
     = RoutePage ViewFilter
     | NewRoutePage { routeData : NewRouteData, datePickerData : DatePickerData }
     | InputJsonPage String (Maybe JsonError)
+    | ConfirmPage { text: String, label : String, code : String, event : ToBackend }
     | ViewJsonPage
     | LoginPage LoginPageData
     | MoreOptionsPage
+    | SpinnerPage String
 
 
 type alias LoginPageData =
@@ -68,7 +69,8 @@ type alias BackendModel =
 
 type alias SessionData =
     { loggedIn : Bool
-    , lastTouched: Time.Posix }
+    , lastTouched : Time.Posix
+    }
 
 
 type LoginFieldType
@@ -94,7 +96,9 @@ type FrontendMsg
     | EditRouteDiscardChanges RouteId
     | EditRouteUpdated RouteIdOrNew String String
     | JsonInputTextChanged String
+    | FrontendMsgConfirmButtonPressed
     | JsonInputSubmitButtonPressed
+    | FrontendMsgGoToPage Page
     | NewRouteButtonPressed
     | WishlistButtonPressed
     | LogButtonPressed
