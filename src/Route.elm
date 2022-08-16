@@ -1,10 +1,12 @@
 module Route exposing (..)
 
-import Time
 import Date
+import Time
+
 
 type RouteId
     = RouteId Int
+
 
 type RouteIdOrNew
     = ExistingRoute RouteId
@@ -22,6 +24,8 @@ type alias RouteData =
     , notes : String
     , tickDate2 : Maybe Date.Date
     , type_ : ClimbType
+    , images : List String
+    , videos : List String
     , id : RouteId
     }
 
@@ -33,6 +37,8 @@ type alias NewRouteData =
     , notes : String
     , tickDate2 : Maybe Date.Date
     , type_ : ClimbType
+    , images : List String
+    , videos : List String
     }
 
 
@@ -44,9 +50,17 @@ type alias CommonRouteData a =
         , notes : String
         , tickDate2 : Maybe Date.Date
         , type_ : ClimbType
+        , images : List String
+    , videos : List String
     }
 
-type ClimbType = Trad | Sport | Boulder | Mix
+
+type ClimbType
+    = Trad
+    | Sport
+    | Boulder
+    | Mix
+
 
 climbTypeToString : ClimbType -> String
 climbTypeToString ct =
@@ -64,7 +78,6 @@ climbTypeToString ct =
             "Boulder"
 
 
-
 commonToExistingRoute : RouteId -> CommonRouteData a -> RouteData
 commonToExistingRoute id common =
     { id = id
@@ -74,7 +87,10 @@ commonToExistingRoute id common =
     , notes = common.notes
     , tickDate2 = common.tickDate2
     , type_ = common.type_
+    , images = common.images
+    , videos = common.videos
     }
+
 
 firstId : RouteId
 firstId =

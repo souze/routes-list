@@ -6,6 +6,7 @@ import Browser.Navigation exposing (Key)
 import Date exposing (Date)
 import DatePicker
 import Dict exposing (Dict)
+import Gallery
 import Lamdera
 import Route exposing (..)
 import Time
@@ -25,7 +26,7 @@ type Page
     = RoutePage ViewFilter
     | NewRoutePage { routeData : NewRouteData, datePickerData : DatePickerData }
     | InputJsonPage String (Maybe JsonError)
-    | ConfirmPage { text: String, label : String, code : String, event : ToBackend }
+    | ConfirmPage { text : String, label : String, code : String, event : ToBackend }
     | ViewJsonPage
     | LoginPage LoginPageData
     | MoreOptionsPage
@@ -55,14 +56,17 @@ type alias DatePickerData =
 type alias RowData =
     { expanded : Bool
     , datePickerData : DatePickerData
+    , galleryState : Gallery.State
     , route : RouteDataEdit
     }
 
+type alias UserData = { password : String }
 
 type alias BackendModel =
     { routes : List RouteData
     , nextId : RouteId
     , sessions : Dict Lamdera.SessionId SessionData
+    , users : Dict String UserData
     , currentTime : Time.Posix
     }
 
@@ -86,6 +90,7 @@ type LoginPageMsg
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
+    | FrontendGalleryMsg RouteId Gallery.Msg
     | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
     | ViewAsJsonButtonPressed
@@ -111,6 +116,11 @@ type FrontendMsg
     | NoOpFrontendMsg
 
 
+type AdminMsg
+    = AddUser { username : String, password : String }
+    | RemoveUser String
+
+
 type ToBackend
     = UpdateRoute RouteData
     | RemoveRoute RouteId
@@ -118,6 +128,7 @@ type ToBackend
     | ToBackendResetRouteList (List NewRouteData)
     | ToBackendLogIn String String
     | ToBackendRefreshSession
+    | ToBackendAdminMsg AdminMsg
     | NoOpToBackend
 
 

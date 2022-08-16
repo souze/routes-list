@@ -5,12 +5,16 @@ import Browser.Navigation as Nav exposing (Key)
 import Date exposing (Date)
 import DateFormat
 import DatePicker
-import Element
+import Element exposing (Element)
 import Element.Background
 import Element.Border
 import Element.Font
 import Element.Input
+import Gallery
+import Gallery.Image
+import GalleryView
 import Html exposing (a)
+import Html.Attributes
 import Json.Decode
 import Json.Encode
 import JsonRoute
@@ -106,6 +110,10 @@ loginPageMessage msg loginPageData model =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        FrontendGalleryMsg routeId galleryMsg ->
+            { model | rows = model.rows |> updateRowForGalleryMsg routeId galleryMsg }
+                |> withNoCommand
+
         FrontendMsgGoToPage page ->
             { model | page = page }
                 |> withNoCommand
@@ -252,6 +260,12 @@ update msg model =
 
         EditRouteUpdated id getter newValue ->
             ( routeUpdated id getter newValue model, Cmd.none )
+
+
+updateRowForGalleryMsg : RouteId -> Gallery.Msg -> List RowData -> List RowData
+updateRowForGalleryMsg routeId msg rows =
+    rows
+        |> mapRowWithRouteId routeId (\rd -> { rd | galleryState = rd.galleryState |> Gallery.update msg })
 
 
 trySubmitInputJson : String -> Model -> ( Model, Cmd FrontendMsg )
@@ -431,6 +445,8 @@ initialNewRoute =
     , area = ""
     , type_ = Trad
     , notes = ""
+    , images = []
+    , videos = []
     }
 
 
@@ -605,6 +621,7 @@ toFrontendRowData routes =
             (\route ->
                 { expanded = False
                 , datePickerData = defaultDatePickerData
+                , galleryState = Gallery.init (List.length route.images + List.length route.videos)
                 , route =
                     { realRoute = route
                     , editRoute = Nothing
@@ -853,7 +870,7 @@ viewRoute : RowData -> Element.Element FrontendMsg
 viewRoute rd =
     Element.column [ Element.spacing 5, Element.width Element.fill ]
         ([ viewRouteOneline rd.route ]
-            |> listAppendIf rd.expanded (viewRouteExpanded rd.route rd.datePickerData)
+            |> listAppendIf rd.expanded (viewRouteExpanded rd.route rd.datePickerData rd.galleryState)
         )
 
 
@@ -866,14 +883,14 @@ listAppendIf pred item list =
         list
 
 
-viewRouteExpanded : RouteDataEdit -> DatePickerData -> Element.Element FrontendMsg
-viewRouteExpanded routeDataEdit datePickerData =
+viewRouteExpanded : RouteDataEdit -> DatePickerData -> Gallery.State -> Element.Element FrontendMsg
+viewRouteExpanded routeDataEdit datePickerData galleryState =
     case routeDataEdit.editRoute of
         Just editRoute ->
             viewRouteExpandedEdit editRoute datePickerData
 
         Nothing ->
-            viewRouteExpandedSolid routeDataEdit.realRoute
+            viewRouteExpandedSolid routeDataEdit.realRoute galleryState
 
 
 expandRouteColumn : List (Element.Element msg) -> Element.Element msg
@@ -886,8 +903,8 @@ expandRouteColumn =
         ]
 
 
-viewRouteExpandedSolid : RouteData -> Element.Element FrontendMsg
-viewRouteExpandedSolid rd =
+viewRouteExpandedSolid : RouteData -> Gallery.State -> Element.Element FrontendMsg
+viewRouteExpandedSolid rd galleryState =
     expandRouteColumn
         [ Element.el [ Element.Font.size 20 ] <| Element.text rd.name
         , Element.text <| "Area: " ++ rd.area
@@ -912,6 +929,27 @@ viewRouteExpandedSolid rd =
 
           else
             Element.none
+        , if List.isEmpty rd.images then
+            Element.none
+
+          else
+            GalleryView.viewGallery rd.id rd.images rd.videos galleryState
+        , if List.isEmpty rd.videos then
+            Element.none
+
+          else
+            Element.html <|
+                Html.video
+                    [ Html.Attributes.width 600
+                    , Html.Attributes.height 200
+                    , Html.Attributes.controls True
+                    ]
+                    [ Html.source
+                        [ Html.Attributes.type_ "video/mp4"
+                        , Html.Attributes.src "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20200408_175256.mp4"
+                        ]
+                        []
+                    ]
         , Element.Input.button []
             { onPress = Just <| EditRouteEnable rd.id
             , label = actionButtonLabel "Edit"
@@ -958,7 +996,7 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
             { onChange = EditRouteUpdated maybeId "notes"
             , text = rd.notes
             , placeholder = Nothing
-            , label = Element.Input.labelLeft [] (Element.text "Notes")
+            , label = Element.Input.labelAbove [] (Element.text "Notes")
             , spellcheck = True
             }
         , Element.row [ Element.spacing 10 ]

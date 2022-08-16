@@ -14,16 +14,6 @@ decodeRouteList =
     Json.Decode.list routeObjectDecoder
 
 
-type alias NewRouteData =
-    { name : String
-    , area : String
-    , grade : String
-    , notes : String
-    , tickDate2 : Maybe Date
-    , type_ : ClimbType
-    }
-
-
 routeObjectDecoder : Json.Decode.Decoder NewRouteData
 routeObjectDecoder =
     Json.Decode.succeed NewRouteData
@@ -33,6 +23,8 @@ routeObjectDecoder =
         |> Json.Decode.Pipeline.optional "comments" Json.Decode.string ""
         |> Json.Decode.Pipeline.optional "tickdate" tickDateDecoder Nothing
         |> Json.Decode.Pipeline.required "type" climbTypeDecoder
+        |> Json.Decode.Pipeline.optional "images" (Json.Decode.list Json.Decode.string) []
+        |> Json.Decode.Pipeline.optional "videos" (Json.Decode.list Json.Decode.string) []
 
 
 tickDateDecoder : Json.Decode.Decoder (Maybe Date)
@@ -82,6 +74,8 @@ encodeRoute route =
          , ( "grade", Json.Encode.string route.grade )
          , ( "comments", Json.Encode.string route.notes )
          , ( "type", Json.Encode.string (Route.climbTypeToString route.type_) )
+         , ( "images", Json.Encode.list Json.Encode.string route.images)
+         , ( "videos", Json.Encode.list Json.Encode.string route.videos)
          ]
             ++ (case route.tickDate2 of
                     Just date ->

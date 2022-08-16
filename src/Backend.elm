@@ -35,36 +35,58 @@ subscriptions model =
         ]
 
 
+testingRoutes : List RouteData
+testingRoutes =
+    [ { name = "Centralpelaren"
+      , grade = "6+"
+      , tickDate2 = Nothing
+      , notes = "Kul, bra säkringar :)"
+      , id = RouteId 1
+      , area = "Utby"
+      , type_ = Trad
+      , images = [ "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/50a6f7c22676c74e8908a0b44a723ebf.0.jpg" ]
+      , videos = []
+      }
+    , { name = "Hokus pokus"
+      , grade = "4+"
+      , tickDate2 = Nothing
+      , notes = "Kul, dåliga säkringar :( Lång lång text that might or might now wrap the wrong way, or the right way. To test text wrapping"
+      , id = RouteId 2
+      , area = "Utby"
+      , type_ = Trad
+      , images =
+            [ "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/50a6f7c22676c74e8908a0b44a723ebf.0.jpg"
+            , "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/50a6f7c22676c74e8908a0b44a723ebf.0.jpg"
+            ]
+      , videos =
+            [ "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20200408_175256.mp4"
+            , "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20200408_175256.mp4"
+            ]
+      }
+    , { name = "Bokus Dokus"
+      , grade = "3+"
+      , tickDate2 = Nothing
+      , notes = "Vilken fest"
+      , id = RouteId 3
+      , area = "Utby"
+      , type_ = Trad
+      , images = []
+      , videos = [ "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20200408_175256.mp4" ]
+      }
+    ]
+
+
+initialUsers : Dict String UserData
+initialUsers =
+    Dict.fromList [ ( "erik", { password = "secret" } ), ( "none", { password = "boll" } ) ]
+
+
 init : ( Model, Cmd BackendMsg )
 init =
     ( { nextId = Route.firstId
       , currentTime = Time.millisToPosix 0
-      , routes =
-            [ { name = "Centralpelaren"
-              , grade = "6+"
-              , tickDate2 = Nothing
-              , notes = "Kul, bra säkringar :)"
-              , id = RouteId 1
-              , area = "Utby"
-              , type_ = Trad
-              }
-            , { name = "Hokus pokus"
-              , grade = "4+"
-              , tickDate2 = Nothing
-              , notes = "Kul, dåliga säkringar :("
-              , id = RouteId 2
-              , area = "Utby"
-              , type_ = Trad
-              }
-            , { name = "Bokus Dokus"
-              , grade = "3+"
-              , tickDate2 = Nothing
-              , notes = "Vilken fest"
-              , id = RouteId 3
-              , area = "Utby"
-              , type_ = Trad
-              }
-            ]
+      , users = initialUsers
+      , routes = testingRoutes
       , sessions = Dict.empty
       }
     , Time.now |> Task.perform BackendMsg.ClockTick
@@ -99,6 +121,7 @@ update msg model =
             ( { model | sessions = model.sessions |> touchSession model.currentTime sessionId }
             , if isLoggedIn sessionId model.sessions then
                 Lamdera.sendToFrontend clientId <| AllRoutesAnnouncement model.routes
+
               else
                 Lamdera.sendToFrontend clientId <|
                     ToFrontendYourNotLoggedIn
@@ -117,13 +140,32 @@ initialSessionData =
     }
 
 
+isAdmin : SessionId -> Dict SessionId SessionData -> Bool
+isAdmin sessionId sessions =
+    False
+
+
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
-    if isLoggedIn sessionId model.sessions then
-        updateFromFrontendLoggedIn sessionId msg model
+    case msg of
+        ToBackendAdminMsg adminMsg ->
+            if isAdmin sessionId model.sessions then
+                updateFromAdmin adminMsg model
 
-    else
-        updateFromFrontendNotLoggedIn sessionId clientId msg model
+            else
+                updateFromFrontendNotLoggedIn sessionId clientId msg model
+
+        _ ->
+            if isLoggedIn sessionId model.sessions then
+                updateFromFrontendLoggedIn sessionId msg model
+
+            else
+                updateFromFrontendNotLoggedIn sessionId clientId msg model
+
+
+updateFromAdmin : AdminMsg -> Model -> ( Model, Cmd BackendMsg )
+updateFromAdmin msg model =
+    model |> withNoCommand
 
 
 isLoggedIn : SessionId -> Dict SessionId SessionData -> Bool
@@ -157,18 +199,31 @@ touchSession time sessionId sessions =
             )
 
 
+sha1 : String -> String
+sha1 =
+    identity
+
+
 updateFromFrontendNotLoggedIn : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontendNotLoggedIn sessionId clientId msg model =
     case msg of
         ToBackendLogIn username password ->
-            if username == "erik" && password == "secret" then
+            let
+                userPasswordMatch : Bool
+                userPasswordMatch =
+                    model.users
+                        |> Dict.get username
+                        |> Maybe.map (.password >> (==) (sha1 password))
+                        |> Maybe.withDefault False
+            in
+            if userPasswordMatch then
                 ( { model
                     | sessions =
                         model.sessions
                             |> setLoggedIn sessionId
                             |> touchSession model.currentTime sessionId
                   }
-                , Lamdera.broadcast <|
+                , Lamdera.sendToFrontend clientId <|
                     AllRoutesAnnouncement model.routes
                 )
 
@@ -182,6 +237,10 @@ updateFromFrontendNotLoggedIn sessionId clientId msg model =
 updateFromFrontendLoggedIn : SessionId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontendLoggedIn sessionId msg model =
     case msg of
+        ToBackendAdminMsg adminMsg ->
+            -- This should never happen
+            model |> withNoCommand
+
         ToBackendRefreshSession ->
             { model | sessions = model.sessions |> touchSession model.currentTime sessionId }
                 |> withNoCommand
