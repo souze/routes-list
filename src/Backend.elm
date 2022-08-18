@@ -230,13 +230,35 @@ updateFromAdmin : ClientId -> AdminMsg -> Model -> ( Model, Cmd BackendMsg )
 updateFromAdmin clientId msg model =
     case msg of
         AddUser { username, password } ->
-            ( model, Cmd.none )
+            ( { model | users = model.users |> newUser username password }
+            , Cmd.none
+            )
 
-        RemoveUser user ->
-            ( model, Cmd.none )
+        RemoveUser username ->
+            ( { model | users = model.users |> Dict.remove username }
+            , Cmd.none
+            )
 
         RequestModel ->
             ( model, Lamdera.sendToFrontend clientId <| ToFrontendAdminWholeModel (getBackupModel model) )
+
+
+newUser : String -> Password -> Dict String UserData -> Dict String UserData
+newUser username password users =
+    if Dict.member username users then
+        -- Don't overwrite
+        users
+
+    else
+        users
+            |> Dict.insert
+                username
+                { username =
+                    username
+                , password = sha1 password
+                , routes = []
+                , nextId = RouteId 0
+                }
 
 
 getBackupModel : Model -> BackupModel

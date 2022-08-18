@@ -110,6 +110,26 @@ loginPageMessage msg loginPageData model =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        FrontendMsgFieldUpdate field newValue ->
+            (case model.page of
+                AdminPage (AdminAddUser username password) ->
+                    case field of
+                        FieldAddUserUsername ->
+                            { model | page = AdminPage (AdminAddUser newValue password) }
+
+                        FieldAddUserPassword ->
+                            { model | page = AdminPage (AdminAddUser username newValue) }
+
+                _ ->
+                    model
+            )
+                |> withNoCommand
+
+        FrontendMsgAddUser username password ->
+            ( { model | page = AdminPage AdminHomePage }
+            , Lamdera.sendToBackend <| ToBackendAdminMsg (AddUser { username = username, password = password })
+            )
+
         LogoutButtonPressed ->
             ( model
             , Lamdera.sendToBackend ToBackendLogOut
@@ -125,7 +145,8 @@ update msg model =
 
         FrontendMsgAdminRequestModel ->
             ( { model | page = SpinnerPage "Waiting for model" }
-            , Lamdera.sendToBackend (ToBackendAdminMsg RequestModel))
+            , Lamdera.sendToBackend (ToBackendAdminMsg RequestModel)
+            )
 
         FrontendMsgConfirmButtonPressed ->
             case model.page of
@@ -596,8 +617,9 @@ updateFromBackend msg model =
             ( model, Cmd.none )
 
         ToFrontendAdminWholeModel backupModel ->
-            ( { model | page = AdminPage (AdminShowJson (backupModelToJsonStr backupModel))}
-            , Cmd.none)
+            ( { model | page = AdminPage (AdminShowJson (backupModelToJsonStr backupModel)) }
+            , Cmd.none
+            )
 
         ToFrontendYouAreAdmin ->
             ( { model | page = AdminPage AdminHomePage }
@@ -632,12 +654,12 @@ backupModelToJsonStr model =
     Json.Encode.list jsonEncodeBackupUser model
         |> Json.Encode.encode 4
 
+
 jsonEncodeBackupUser : { username : String, routes : List RouteData } -> Json.Encode.Value
 jsonEncodeBackupUser { username, routes } =
     Json.Encode.object
-        [
-            ("username", Json.Encode.string username)
-            , ("routes", Json.Encode.list JsonRoute.encodeRoute routes)
+        [ ( "username", Json.Encode.string username )
+        , ( "routes", Json.Encode.list JsonRoute.encodeRoute routes )
         ]
 
 
@@ -701,27 +723,41 @@ viewMainColumn model =
             adminPageWithItems
                 (case subPage of
                     AdminHomePage ->
-                        [ buttonToSendEvent "Show Json" (FrontendMsgAdminRequestModel)
+                        [ buttonToSendEvent "Show Json" FrontendMsgAdminRequestModel
                         , buttonToSendEvent "Input Json" (FrontendMsgGoToPage (AdminPage AdminInputJson))
-                        , buttonToSendEvent "Add user" (FrontendMsgGoToPage (AdminPage AdminAddUser))
+                        , buttonToSendEvent "Add user" (FrontendMsgGoToPage (AdminPage (AdminAddUser "" "")))
                         , buttonToSendEvent "Remove user" (FrontendMsgGoToPage (AdminPage AdminRemoveUser))
                         , buttonToSendEvent "Change password for user" (FrontendMsgGoToPage (AdminPage AdminChangePassword))
+                        , buttonToSendEvent "Log out" LogoutButtonPressed
                         ]
 
                     AdminInputJson ->
-                        []
+                        [ Element.text "Not yet implemented" ]
 
                     AdminShowJson jsonText ->
                         [ Element.text jsonText ]
 
-                    AdminAddUser ->
-                        []
+                    AdminAddUser username password ->
+                        [ Element.Input.text []
+                            { onChange = FrontendMsgFieldUpdate FieldAddUserUsername
+                            , text = username
+                            , placeholder = Nothing
+                            , label = Element.Input.labelAbove [] (Element.text "Username")
+                            }
+                        , Element.Input.text []
+                            { onChange = FrontendMsgFieldUpdate FieldAddUserPassword
+                            , text = password
+                            , placeholder = Nothing
+                            , label = Element.Input.labelAbove [] (Element.text "Password")
+                            }
+                        , buttonToSendEvent "Submit" (FrontendMsgAddUser username password)
+                        ]
 
                     AdminRemoveUser ->
-                        []
+                        [ Element.text "Not yet implemented" ]
 
                     AdminChangePassword ->
-                        []
+                        [ Element.text "Not yet implemented" ]
                 )
 
         SpinnerPage text ->

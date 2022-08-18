@@ -6,9 +6,8 @@ V1
 * Multi user
     * Change password
     * Admin pane (Separate user)
-        * Add user
-        * Remove user
-        * Reset user password
+        * Remove user - with confirmation
+        * Reset user password - with confirmation
 
 Later
 * sort order

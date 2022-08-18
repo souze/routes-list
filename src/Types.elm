@@ -38,7 +38,7 @@ type AdminPage
     = AdminHomePage
     | AdminInputJson
     | AdminShowJson String
-    | AdminAddUser
+    | AdminAddUser String String
     | AdminRemoveUser
     | AdminChangePassword
 
@@ -74,7 +74,10 @@ type alias RowData =
 type alias Password =
     String
 
-type alias BackupModel = List { username : String, routes : List RouteData }
+
+type alias BackupModel =
+    List { username : String, routes : List RouteData }
+
 
 type alias UserData =
     { username : String
@@ -106,11 +109,19 @@ type LoginPageMsg
     = LoginPageFieldChange LoginFieldType String
     | LoginPageSubmit
 
+
+type FieldType
+    = FieldAddUserUsername
+    | FieldAddUserPassword
+
+
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
+    | FrontendMsgFieldUpdate FieldType String
     | FrontendMsgAdminRequestModel
     | FrontendGalleryMsg RouteId Gallery.Msg
+    | FrontendMsgAddUser String String
     | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
     | ViewAsJsonButtonPressed
