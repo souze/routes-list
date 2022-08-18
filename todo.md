@@ -6,7 +6,6 @@ V1
 * Multi user
     * Change password
     * Admin pane (Separate user)
-        * Remove user - with confirmation
         * Reset user password - with confirmation
 
 Later

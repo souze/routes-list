@@ -26,7 +26,7 @@ type Page
     = RoutePage ViewFilter
     | NewRoutePage { routeData : NewRouteData, datePickerData : DatePickerData }
     | InputJsonPage String (Maybe JsonError)
-    | ConfirmPage { text : String, label : String, code : String, event : ToBackend }
+    | ConfirmPage { text : String, label : String, code : String, event : ToBackend, abortPage : Page }
     | ViewJsonPage
     | LoginPage LoginPageData
     | MoreOptionsPage
@@ -39,7 +39,7 @@ type AdminPage
     | AdminInputJson
     | AdminShowJson String
     | AdminAddUser String String
-    | AdminRemoveUser
+    | AdminRemoveUser String
     | AdminChangePassword
 
 
@@ -113,6 +113,7 @@ type LoginPageMsg
 type FieldType
     = FieldAddUserUsername
     | FieldAddUserPassword
+    | FieldRemoveUserUsername
 
 
 type FrontendMsg
@@ -122,6 +123,7 @@ type FrontendMsg
     | FrontendMsgAdminRequestModel
     | FrontendGalleryMsg RouteId Gallery.Msg
     | FrontendMsgAddUser String String
+    | FrontendMsgRemoveUser String
     | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
     | ViewAsJsonButtonPressed

@@ -120,6 +120,12 @@ update msg model =
                         FieldAddUserPassword ->
                             { model | page = AdminPage (AdminAddUser username newValue) }
 
+                        _ ->
+                            model
+
+                AdminPage (AdminRemoveUser username) ->
+                    { model | page = AdminPage (AdminRemoveUser newValue) }
+
                 _ ->
                     model
             )
@@ -128,6 +134,20 @@ update msg model =
         FrontendMsgAddUser username password ->
             ( { model | page = AdminPage AdminHomePage }
             , Lamdera.sendToBackend <| ToBackendAdminMsg (AddUser { username = username, password = password })
+            )
+
+        FrontendMsgRemoveUser username ->
+            ( { model
+                | page =
+                    ConfirmPage
+                        { event = ToBackendAdminMsg (RemoveUser username)
+                        , label = "Are you sure you want to remove user \"" ++ username ++ "?"
+                        , text = ""
+                        , code = "remove " ++ username
+                        , abortPage = AdminPage AdminHomePage
+                        }
+              }
+            , Cmd.none
             )
 
         LogoutButtonPressed ->
@@ -195,8 +215,12 @@ update msg model =
                 InputJsonPage _ err ->
                     { model | page = InputJsonPage newValue err }
 
-                ConfirmPage { label, code, event } ->
-                    { model | page = ConfirmPage { label = label, text = newValue, code = code, event = event } }
+                ConfirmPage attr ->
+                    { model
+                        | page =
+                            ConfirmPage
+                                { attr | text = newValue }
+                    }
 
                 _ ->
                     -- That's strange, why was the field updated when the page isn't visible?
@@ -319,6 +343,7 @@ trySubmitInputJson text model =
                         , text = ""
                         , code = "replace"
                         , event = ToBackendResetRouteList newRoutes
+                        , abortPage = RoutePage ViewAll
                         }
               }
             , Cmd.none
@@ -726,7 +751,7 @@ viewMainColumn model =
                         [ buttonToSendEvent "Show Json" FrontendMsgAdminRequestModel
                         , buttonToSendEvent "Input Json" (FrontendMsgGoToPage (AdminPage AdminInputJson))
                         , buttonToSendEvent "Add user" (FrontendMsgGoToPage (AdminPage (AdminAddUser "" "")))
-                        , buttonToSendEvent "Remove user" (FrontendMsgGoToPage (AdminPage AdminRemoveUser))
+                        , buttonToSendEvent "Remove user" (FrontendMsgGoToPage (AdminPage (AdminRemoveUser "")))
                         , buttonToSendEvent "Change password for user" (FrontendMsgGoToPage (AdminPage AdminChangePassword))
                         , buttonToSendEvent "Log out" LogoutButtonPressed
                         ]
@@ -753,8 +778,15 @@ viewMainColumn model =
                         , buttonToSendEvent "Submit" (FrontendMsgAddUser username password)
                         ]
 
-                    AdminRemoveUser ->
-                        [ Element.text "Not yet implemented" ]
+                    AdminRemoveUser username ->
+                        [ Element.Input.text []
+                            { onChange = FrontendMsgFieldUpdate FieldRemoveUserUsername
+                            , text = username
+                            , placeholder = Nothing
+                            , label = Element.Input.labelAbove [] (Element.text "Username")
+                            }
+                        , buttonToSendEvent "Submit" (FrontendMsgRemoveUser username)
+                        ]
 
                     AdminChangePassword ->
                         [ Element.text "Not yet implemented" ]
@@ -794,8 +826,8 @@ viewMainColumn model =
                     ++ [ viewJsonInputSubmitButton ]
                 )
 
-        ConfirmPage { text, label, code } ->
-            mainColumnWithToprow
+        ConfirmPage { text, label, code, abortPage } ->
+            mainColumn
                 [ Element.textColumn []
                     [ Element.paragraph []
                         [ Element.text <| label
@@ -809,6 +841,7 @@ viewMainColumn model =
                     , label = Element.Input.labelLeft [] (Element.text "Confirm")
                     }
                 , buttonToSendEvent "Confirm" FrontendMsgConfirmButtonPressed
+                , buttonToSendEvent "Abort" (FrontendMsgGoToPage abortPage)
                 ]
 
         ViewJsonPage ->
@@ -1115,6 +1148,7 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
                                 , label = "Are you sure you want to remove the route \"" ++ rd.name ++ "\"?"
                                 , code = "remove"
                                 , event = RemoveRoute routeId
+                                , abortPage = RoutePage ViewAll
                                 }
                             )
                         )

@@ -228,19 +228,24 @@ getUserData sessionId sessions users =
 
 updateFromAdmin : ClientId -> AdminMsg -> Model -> ( Model, Cmd BackendMsg )
 updateFromAdmin clientId msg model =
-    case msg of
+    (case msg of
         AddUser { username, password } ->
-            ( { model | users = model.users |> newUser username password }
-            , Cmd.none
-            )
+            { model | users = model.users |> newUser username password }
 
         RemoveUser username ->
-            ( { model | users = model.users |> Dict.remove username }
-            , Cmd.none
-            )
+            { model | users = model.users |> Dict.remove username }
 
         RequestModel ->
-            ( model, Lamdera.sendToFrontend clientId <| ToFrontendAdminWholeModel (getBackupModel model) )
+            model
+    )
+        |> updateAndSendWholeModel clientId
+
+
+updateAndSendWholeModel : ClientId -> Model -> ( Model, Cmd BackendMsg )
+updateAndSendWholeModel clientId model =
+    ( model
+    , Lamdera.sendToFrontend clientId <| ToFrontendAdminWholeModel (getBackupModel model)
+    )
 
 
 newUser : String -> Password -> Dict String UserData -> Dict String UserData
