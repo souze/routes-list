@@ -2,16 +2,17 @@ module Backend exposing (..)
 
 import BackendMsg
 import Dict exposing (Dict)
+import Element.Input exposing (username)
 import Element.Region exposing (announce)
 import Lamdera exposing (ClientId, SessionId)
 import List.Extra
 import Maybe.Extra
 import Process
 import Route exposing (..)
+import SHA1
 import Task
 import Time
 import Types exposing (..)
-import SHA1
 
 
 type alias Model =
@@ -150,9 +151,18 @@ removeOldSessions time =
     Dict.filter (\_ { lastTouched } -> Time.posixToMillis lastTouched > (Time.posixToMillis time - 10000))
 
 
+admins : List ( String, String )
+admins =
+    [ ( "admin", sha1 "boll" ) ]
+
+
 isAdmin : SessionId -> Dict SessionId SessionData -> Bool
 isAdmin sessionId sessions =
-    False
+    sessions
+        |> Dict.get sessionId
+        |> Maybe.map .username
+        |> Maybe.map (\username -> List.member username (admins |> List.unzip |> Tuple.first))
+        |> Maybe.withDefault False
 
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
@@ -160,7 +170,7 @@ updateFromFrontend sessionId clientId msg model =
     case msg of
         ToBackendAdminMsg adminMsg ->
             if isAdmin sessionId model.sessions then
-                updateFromAdmin adminMsg model
+                updateFromAdmin clientId adminMsg model
 
             else
                 updateFromFrontendNotLoggedIn sessionId clientId msg model
@@ -191,7 +201,11 @@ updateFromFrontend sessionId clientId msg model =
                     updateFromFrontendNotLoggedIn sessionId clientId msg model
 
 
-updateUserData : comparable -> (value -> ( value, extra )) -> Dict comparable value -> ( Dict comparable value, Maybe extra )
+updateUserData :
+    comparable
+    -> (value -> ( value, extra ))
+    -> Dict comparable value
+    -> ( Dict comparable value, Maybe extra )
 updateUserData key fn input =
     input
         |> Dict.get key
@@ -212,9 +226,26 @@ getUserData sessionId sessions users =
         |> Maybe.Extra.join
 
 
-updateFromAdmin : AdminMsg -> Model -> ( Model, Cmd BackendMsg )
-updateFromAdmin msg model =
-    model |> withNoCommand
+updateFromAdmin : ClientId -> AdminMsg -> Model -> ( Model, Cmd BackendMsg )
+updateFromAdmin clientId msg model =
+    case msg of
+        AddUser { username, password } ->
+            ( model, Cmd.none )
+
+        RemoveUser user ->
+            ( model, Cmd.none )
+
+        RequestModel ->
+            ( model, Lamdera.sendToFrontend clientId <| ToFrontendAdminWholeModel (getBackupModel model) )
+
+
+getBackupModel : Model -> BackupModel
+getBackupModel model =
+    model.users
+        |> Dict.toList
+        |> List.unzip
+        |> Tuple.second
+        |> List.map (\ud -> { username = ud.username, routes = ud.routes })
 
 
 touchSession : Time.Posix -> SessionId -> Dict SessionId SessionData -> Dict SessionId SessionData
@@ -236,28 +267,55 @@ updateFromFrontendNotLoggedIn : SessionId -> ClientId -> ToBackend -> Model -> (
 updateFromFrontendNotLoggedIn sessionId clientId msg model =
     case msg of
         ToBackendLogIn username password ->
-            let
-                matchingUserData : Maybe UserData
-                matchingUserData =
-                    model.users
-                        |> Dict.get username
-                        |> Maybe.Extra.filter (.password >> (==) (sha1 password))
-            in
-            case matchingUserData of
-                Just userData ->
-                    ( { model
-                        | sessions =
-                            model.sessions |> Dict.insert sessionId { username = username, lastTouched = model.currentTime }
-                      }
-                    , Lamdera.sendToFrontend clientId <|
-                        AllRoutesAnnouncement userData.routes
-                    )
+            if List.member username (admins |> List.unzip |> Tuple.first) then
+                loginAdmin username password sessionId clientId model
 
-                Nothing ->
-                    ( model, Lamdera.sendToFrontend clientId <| ToFrontendWrongUserNamePassword )
+            else
+                loginMember username password sessionId clientId model
 
         _ ->
             ( model, Lamdera.sendToFrontend clientId <| ToFrontendYourNotLoggedIn )
+
+
+loginAdmin : String -> String -> SessionId -> ClientId -> Model -> ( Model, Cmd BackendMsg )
+loginAdmin username password sessionId clientId model =
+    if List.member ( username, sha1 password ) admins then
+        ( { model
+            | sessions =
+                model.sessions
+                    |> Dict.insert sessionId
+                        { username = username
+                        , lastTouched = model.currentTime
+                        }
+          }
+        , Lamdera.sendToFrontend clientId <| ToFrontendYouAreAdmin
+        )
+
+    else
+        ( model, Lamdera.sendToFrontend clientId <| ToFrontendYourNotLoggedIn )
+
+
+loginMember : String -> String -> SessionId -> ClientId -> Model -> ( Model, Cmd BackendMsg )
+loginMember username password sessionId clientId model =
+    let
+        matchingUserData : Maybe UserData
+        matchingUserData =
+            model.users
+                |> Dict.get username
+                |> Maybe.Extra.filter (.password >> (==) (sha1 password))
+    in
+    case matchingUserData of
+        Just userData ->
+            ( { model
+                | sessions =
+                    model.sessions |> Dict.insert sessionId { username = username, lastTouched = model.currentTime }
+              }
+            , Lamdera.sendToFrontend clientId <|
+                AllRoutesAnnouncement userData.routes
+            )
+
+        Nothing ->
+            ( model, Lamdera.sendToFrontend clientId <| ToFrontendWrongUserNamePassword )
 
 
 updateFromFrontendLoggedIn : SessionId -> ClientId -> ToBackend -> UserData -> ( UserData, Cmd BackendMsg )

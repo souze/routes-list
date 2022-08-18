@@ -1,10 +1,16 @@
 
 # todos
 
-* sort order
-* Pictures and Videos from link
+V1
+
 * Multi user
+    * Change password
     * Admin pane (Separate user)
-        * Full model as JSon, in + out
         * Add user
         * Remove user
+        * Reset user password
+
+Later
+* sort order
+* Pictures and Videos from link
+* Admin Json in

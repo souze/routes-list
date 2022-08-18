@@ -123,6 +123,10 @@ update msg model =
             { model | page = page }
                 |> withNoCommand
 
+        FrontendMsgAdminRequestModel ->
+            ( { model | page = SpinnerPage "Waiting for model" }
+            , Lamdera.sendToBackend (ToBackendAdminMsg RequestModel))
+
         FrontendMsgConfirmButtonPressed ->
             case model.page of
                 ConfirmPage { text, code, event } ->
@@ -591,6 +595,15 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
+        ToFrontendAdminWholeModel backupModel ->
+            ( { model | page = AdminPage (AdminShowJson (backupModelToJsonStr backupModel))}
+            , Cmd.none)
+
+        ToFrontendYouAreAdmin ->
+            ( { model | page = AdminPage AdminHomePage }
+            , Cmd.none
+            )
+
         ToFrontendWrongUserNamePassword ->
             ( { model | page = LoginPage emptyLoginPageData }
             , Cmd.none
@@ -612,6 +625,20 @@ updateFromBackend msg model =
                    )
             , Cmd.none
             )
+
+
+backupModelToJsonStr : BackupModel -> String
+backupModelToJsonStr model =
+    Json.Encode.list jsonEncodeBackupUser model
+        |> Json.Encode.encode 4
+
+jsonEncodeBackupUser : { username : String, routes : List RouteData } -> Json.Encode.Value
+jsonEncodeBackupUser { username, routes } =
+    Json.Encode.object
+        [
+            ("username", Json.Encode.string username)
+            , ("routes", Json.Encode.list JsonRoute.encodeRoute routes)
+        ]
 
 
 setRoutesReceivedFromBackend : List RouteData -> Model -> Model
@@ -659,9 +686,44 @@ wrappingText text =
     Element.paragraph [] [ Element.text text ]
 
 
+adminPageWithItems : List (Element FrontendMsg) -> Element FrontendMsg
+adminPageWithItems items =
+    mainColumn
+        (buttonToSendEvent "Home" (FrontendMsgGoToPage (AdminPage AdminHomePage))
+            :: items
+        )
+
+
 viewMainColumn : Model -> Element.Element FrontendMsg
 viewMainColumn model =
     case model.page of
+        AdminPage subPage ->
+            adminPageWithItems
+                (case subPage of
+                    AdminHomePage ->
+                        [ buttonToSendEvent "Show Json" (FrontendMsgAdminRequestModel)
+                        , buttonToSendEvent "Input Json" (FrontendMsgGoToPage (AdminPage AdminInputJson))
+                        , buttonToSendEvent "Add user" (FrontendMsgGoToPage (AdminPage AdminAddUser))
+                        , buttonToSendEvent "Remove user" (FrontendMsgGoToPage (AdminPage AdminRemoveUser))
+                        , buttonToSendEvent "Change password for user" (FrontendMsgGoToPage (AdminPage AdminChangePassword))
+                        ]
+
+                    AdminInputJson ->
+                        []
+
+                    AdminShowJson jsonText ->
+                        [ Element.text jsonText ]
+
+                    AdminAddUser ->
+                        []
+
+                    AdminRemoveUser ->
+                        []
+
+                    AdminChangePassword ->
+                        []
+                )
+
         SpinnerPage text ->
             mainColumn
                 [ wrappingText "<imagine this is a picture of a spinner \u{1FA97}>"

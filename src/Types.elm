@@ -31,6 +31,16 @@ type Page
     | LoginPage LoginPageData
     | MoreOptionsPage
     | SpinnerPage String
+    | AdminPage AdminPage
+
+
+type AdminPage
+    = AdminHomePage
+    | AdminInputJson
+    | AdminShowJson String
+    | AdminAddUser
+    | AdminRemoveUser
+    | AdminChangePassword
 
 
 type alias LoginPageData =
@@ -61,7 +71,10 @@ type alias RowData =
     }
 
 
-type alias Password = String
+type alias Password =
+    String
+
+type alias BackupModel = List { username : String, routes : List RouteData }
 
 type alias UserData =
     { username : String
@@ -93,10 +106,10 @@ type LoginPageMsg
     = LoginPageFieldChange LoginFieldType String
     | LoginPageSubmit
 
-
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
+    | FrontendMsgAdminRequestModel
     | FrontendGalleryMsg RouteId Gallery.Msg
     | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
@@ -127,6 +140,7 @@ type FrontendMsg
 type AdminMsg
     = AddUser { username : String, password : String }
     | RemoveUser String
+    | RequestModel
 
 
 type ToBackend
@@ -152,6 +166,8 @@ type alias BackendMsg =
 
 type ToFrontend
     = AllRoutesAnnouncement (List RouteData)
+    | ToFrontendYouAreAdmin
+    | ToFrontendAdminWholeModel BackupModel
     | ToFrontendWrongUserNamePassword
     | ToFrontendYourNotLoggedIn
     | NoOpToFrontend
