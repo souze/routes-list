@@ -8,4 +8,3 @@
         * Full model as JSon, in + out
         * Add user
         * Remove user
-    * sha1 password

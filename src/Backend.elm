@@ -11,6 +11,7 @@ import Route exposing (..)
 import Task
 import Time
 import Types exposing (..)
+import SHA1
 
 
 type alias Model =
@@ -83,14 +84,14 @@ initialUsers =
     Dict.fromList
         [ ( "erik"
           , { username = "erik"
-            , password = "secret"
+            , password = sha1 "secret"
             , routes = testingRoutes
             , nextId = RouteId 4
             }
           )
         , ( "none"
           , { username = "none"
-            , password = "boll"
+            , password = sha1 "boll"
             , routes = List.take 2 testingRoutes
             , nextId = RouteId 3
             }
@@ -228,7 +229,7 @@ touchSession time sessionId sessions =
 
 sha1 : String -> String
 sha1 =
-    identity
+    SHA1.fromString >> SHA1.toBase64
 
 
 updateFromFrontendNotLoggedIn : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
