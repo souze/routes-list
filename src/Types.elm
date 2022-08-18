@@ -60,20 +60,27 @@ type alias RowData =
     , route : RouteDataEdit
     }
 
-type alias UserData = { password : String }
+
+type alias Password = String
+
+type alias UserData =
+    { username : String
+    , password : Password
+    , routes : List RouteData
+    , nextId : RouteId
+    }
+
 
 type alias BackendModel =
-    { routes : List RouteData
-    , nextId : RouteId
-    , sessions : Dict Lamdera.SessionId SessionData
+    { sessions : Dict Lamdera.SessionId SessionData
     , users : Dict String UserData
     , currentTime : Time.Posix
     }
 
 
 type alias SessionData =
-    { loggedIn : Bool
-    , lastTouched : Time.Posix
+    { lastTouched : Time.Posix
+    , username : String
     }
 
 
@@ -94,6 +101,7 @@ type FrontendMsg
     | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
     | ViewAsJsonButtonPressed
+    | LogoutButtonPressed
     | RouteButtonClicked RouteId
     | EditRouteEnable RouteId
     | EditRouteSave RouteData
@@ -125,6 +133,7 @@ type ToBackend
     = UpdateRoute RouteData
     | RemoveRoute RouteId
     | ToBackendCreateNewRoute NewRouteData
+    | ToBackendLogOut
     | ToBackendResetRouteList (List NewRouteData)
     | ToBackendLogIn String String
     | ToBackendRefreshSession

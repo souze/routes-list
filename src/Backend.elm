@@ -2,8 +2,10 @@ module Backend exposing (..)
 
 import BackendMsg
 import Dict exposing (Dict)
+import Element.Region exposing (announce)
 import Lamdera exposing (ClientId, SessionId)
 import List.Extra
+import Maybe.Extra
 import Process
 import Route exposing (..)
 import Task
@@ -78,22 +80,35 @@ testingRoutes =
 
 initialUsers : Dict String UserData
 initialUsers =
-    Dict.fromList [ ( "erik", { password = "secret" } ), ( "none", { password = "boll" } ) ]
+    Dict.fromList
+        [ ( "erik"
+          , { username = "erik"
+            , password = "secret"
+            , routes = testingRoutes
+            , nextId = RouteId 4
+            }
+          )
+        , ( "none"
+          , { username = "none"
+            , password = "boll"
+            , routes = List.take 2 testingRoutes
+            , nextId = RouteId 3
+            }
+          )
+        ]
 
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( { nextId = Route.firstId
-      , currentTime = Time.millisToPosix 0
+    ( { currentTime = Time.millisToPosix 0
       , users = initialUsers
-      , routes = testingRoutes
       , sessions = Dict.empty
       }
     , Time.now |> Task.perform BackendMsg.ClockTick
     )
 
 
-withNoCommand : Model -> ( Model, Cmd BackendMsg )
+withNoCommand : a -> ( a, Cmd BackendMsg )
 withNoCommand model =
     ( model, Cmd.none )
 
@@ -119,25 +134,19 @@ update msg model =
 
         BackendMsg.ClientConnected sessionId clientId ->
             ( { model | sessions = model.sessions |> touchSession model.currentTime sessionId }
-            , if isLoggedIn sessionId model.sessions then
-                Lamdera.sendToFrontend clientId <| AllRoutesAnnouncement model.routes
+            , case getUserData sessionId model.sessions model.users of
+                Just userData ->
+                    Lamdera.sendToFrontend clientId <| AllRoutesAnnouncement userData.routes
 
-              else
-                Lamdera.sendToFrontend clientId <|
-                    ToFrontendYourNotLoggedIn
+                Nothing ->
+                    Lamdera.sendToFrontend clientId <|
+                        ToFrontendYourNotLoggedIn
             )
 
 
 removeOldSessions : Time.Posix -> Dict SessionId SessionData -> Dict SessionId SessionData
 removeOldSessions time =
     Dict.filter (\_ { lastTouched } -> Time.posixToMillis lastTouched > (Time.posixToMillis time - 10000))
-
-
-initialSessionData : SessionData
-initialSessionData =
-    { loggedIn = False
-    , lastTouched = Time.millisToPosix 0
-    }
 
 
 isAdmin : SessionId -> Dict SessionId SessionData -> Bool
@@ -156,35 +165,55 @@ updateFromFrontend sessionId clientId msg model =
                 updateFromFrontendNotLoggedIn sessionId clientId msg model
 
         _ ->
-            if isLoggedIn sessionId model.sessions then
-                updateFromFrontendLoggedIn sessionId msg model
+            case getUserData sessionId model.sessions model.users of
+                Just userData ->
+                    case msg of
+                        ToBackendRefreshSession ->
+                            { model | sessions = model.sessions |> touchSession model.currentTime sessionId }
+                                |> withNoCommand
 
-            else
-                updateFromFrontendNotLoggedIn sessionId clientId msg model
+                        ToBackendLogOut ->
+                            ( { model | sessions = model.sessions |> Dict.remove sessionId }
+                            , Lamdera.sendToFrontend clientId <| ToFrontendYourNotLoggedIn
+                            )
+
+                        _ ->
+                            let
+                                ( newUsers, maybeCommand ) =
+                                    updateUserData userData.username (updateFromFrontendLoggedIn sessionId clientId msg) model.users
+                            in
+                            ( { model | users = newUsers }
+                            , maybeCommand |> Maybe.withDefault Cmd.none
+                            )
+
+                Nothing ->
+                    updateFromFrontendNotLoggedIn sessionId clientId msg model
+
+
+updateUserData : comparable -> (value -> ( value, extra )) -> Dict comparable value -> ( Dict comparable value, Maybe extra )
+updateUserData key fn input =
+    input
+        |> Dict.get key
+        -- Maybe value
+        |> Maybe.map fn
+        -- Maybe (value, extra)
+        |> Maybe.map (Tuple.mapFirst (\newB -> input |> Dict.insert key newB) >> Tuple.mapSecond Just)
+        -- Maybe (Dict key value, Maybe extra)
+        |> Maybe.withDefault ( input, Nothing )
+
+
+getUserData : SessionId -> Dict SessionId SessionData -> Dict String UserData -> Maybe UserData
+getUserData sessionId sessions users =
+    sessions
+        |> Dict.get sessionId
+        |> Maybe.map .username
+        |> Maybe.map (\u -> Dict.get u users)
+        |> Maybe.Extra.join
 
 
 updateFromAdmin : AdminMsg -> Model -> ( Model, Cmd BackendMsg )
 updateFromAdmin msg model =
     model |> withNoCommand
-
-
-isLoggedIn : SessionId -> Dict SessionId SessionData -> Bool
-isLoggedIn sessionId sessions =
-    Dict.get sessionId sessions
-        |> Maybe.map .loggedIn
-        |> Maybe.withDefault False
-
-
-setLoggedIn : SessionId -> Dict SessionId SessionData -> Dict SessionId SessionData
-setLoggedIn sessionId sessions =
-    sessions
-        |> Dict.update sessionId
-            (\maybeSd ->
-                maybeSd
-                    |> Maybe.map (\sd -> { sd | loggedIn = True })
-                    |> Maybe.withDefault { initialSessionData | loggedIn = True }
-                    |> Just
-            )
 
 
 touchSession : Time.Posix -> SessionId -> Dict SessionId SessionData -> Dict SessionId SessionData
@@ -194,8 +223,6 @@ touchSession time sessionId sessions =
             (\maybeSd ->
                 maybeSd
                     |> Maybe.map (\sd -> { sd | lastTouched = time })
-                    |> Maybe.withDefault { initialSessionData | lastTouched = time }
-                    |> Just
             )
 
 
@@ -209,110 +236,113 @@ updateFromFrontendNotLoggedIn sessionId clientId msg model =
     case msg of
         ToBackendLogIn username password ->
             let
-                userPasswordMatch : Bool
-                userPasswordMatch =
+                matchingUserData : Maybe UserData
+                matchingUserData =
                     model.users
                         |> Dict.get username
-                        |> Maybe.map (.password >> (==) (sha1 password))
-                        |> Maybe.withDefault False
+                        |> Maybe.Extra.filter (.password >> (==) (sha1 password))
             in
-            if userPasswordMatch then
-                ( { model
-                    | sessions =
-                        model.sessions
-                            |> setLoggedIn sessionId
-                            |> touchSession model.currentTime sessionId
-                  }
-                , Lamdera.sendToFrontend clientId <|
-                    AllRoutesAnnouncement model.routes
-                )
+            case matchingUserData of
+                Just userData ->
+                    ( { model
+                        | sessions =
+                            model.sessions |> Dict.insert sessionId { username = username, lastTouched = model.currentTime }
+                      }
+                    , Lamdera.sendToFrontend clientId <|
+                        AllRoutesAnnouncement userData.routes
+                    )
 
-            else
-                ( model, Lamdera.sendToFrontend clientId <| ToFrontendWrongUserNamePassword )
+                Nothing ->
+                    ( model, Lamdera.sendToFrontend clientId <| ToFrontendWrongUserNamePassword )
 
         _ ->
             ( model, Lamdera.sendToFrontend clientId <| ToFrontendYourNotLoggedIn )
 
 
-updateFromFrontendLoggedIn : SessionId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
-updateFromFrontendLoggedIn sessionId msg model =
+updateFromFrontendLoggedIn : SessionId -> ClientId -> ToBackend -> UserData -> ( UserData, Cmd BackendMsg )
+updateFromFrontendLoggedIn sessionId clientId msg userData =
+    let
+        announceRoutes : List RouteData -> Cmd BackendMsg
+        announceRoutes routes =
+            Lamdera.sendToFrontend clientId <| AllRoutesAnnouncement routes
+    in
     case msg of
         ToBackendAdminMsg adminMsg ->
             -- This should never happen
-            model |> withNoCommand
+            userData |> withNoCommand
 
         ToBackendRefreshSession ->
-            { model | sessions = model.sessions |> touchSession model.currentTime sessionId }
-                |> withNoCommand
+            -- Already handled before, will never happen
+            userData |> withNoCommand
 
         ToBackendResetRouteList newRoutes ->
             let
-                newModel =
-                    model
-                        |> (\m ->
-                                { m | routes = [] }
-                                    |> addNewRouteList newRoutes
-                           )
+                newUserData : UserData
+                newUserData =
+                    { userData | routes = [] }
+                        |> addNewRouteList newRoutes
             in
-            ( newModel
-            , Lamdera.broadcast <|
-                AllRoutesAnnouncement newModel.routes
+            ( newUserData
+            , announceRoutes newUserData.routes
             )
 
         ToBackendCreateNewRoute route ->
             let
-                newModel =
-                    createNewRoute route model
+                newUserData =
+                    createNewRoute route userData
             in
-            ( newModel
-            , Lamdera.broadcast <|
-                AllRoutesAnnouncement newModel.routes
+            ( newUserData
+            , announceRoutes newUserData.routes
             )
 
         UpdateRoute route ->
             let
                 newRoutes : List RouteData
                 newRoutes =
-                    model.routes
+                    userData.routes
                         |> createOrUpdate route
             in
-            ( { model | routes = newRoutes }
-            , Lamdera.broadcast <|
-                AllRoutesAnnouncement newRoutes
+            ( { userData | routes = newRoutes }
+            , announceRoutes newRoutes
             )
 
         RemoveRoute id ->
             let
-                newModel : Model
-                newModel =
-                    removeRoute id model
+                newUserData : UserData
+                newUserData =
+                    removeRoute id userData
             in
-            ( newModel
-            , Lamdera.broadcast <|
-                AllRoutesAnnouncement newModel.routes
+            ( newUserData
+            , announceRoutes newUserData.routes
             )
 
         ToBackendLogIn _ _ ->
             -- I'm already logged in, announce the routes again
-            ( model
-            , Lamdera.broadcast <| AllRoutesAnnouncement model.routes
+            ( userData
+            , announceRoutes userData.routes
+            )
+
+        ToBackendLogOut ->
+            -- This should have been handled earlier
+            ( userData
+            , Cmd.none
             )
 
         NoOpToBackend ->
-            ( model, Cmd.none )
+            ( userData, Cmd.none )
 
 
-addNewRouteList : List NewRouteData -> Model -> Model
-addNewRouteList newRoutes model =
+addNewRouteList : List NewRouteData -> UserData -> UserData
+addNewRouteList newRoutes userData =
     newRoutes
-        |> List.foldl createNewRoute model
+        |> List.foldl createNewRoute userData
 
 
-createNewRoute : NewRouteData -> Model -> Model
-createNewRoute routeData model =
-    { model
-        | routes = commonToExistingRoute model.nextId routeData :: model.routes
-        , nextId = incrementRouteId model.nextId
+createNewRoute : NewRouteData -> UserData -> UserData
+createNewRoute routeData userData =
+    { userData
+        | routes = commonToExistingRoute userData.nextId routeData :: userData.routes
+        , nextId = incrementRouteId userData.nextId
     }
 
 
@@ -321,9 +351,9 @@ incrementRouteId (RouteId id) =
     RouteId (id + 1)
 
 
-removeRoute : RouteId -> Model -> Model
-removeRoute id model =
-    { model | routes = model.routes |> List.filter (\r -> r.id /= id) }
+removeRoute : RouteId -> UserData -> UserData
+removeRoute id userData =
+    { userData | routes = userData.routes |> List.filter (\r -> r.id /= id) }
 
 
 createOrUpdate : RouteData -> List RouteData -> List RouteData

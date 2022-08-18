@@ -110,6 +110,11 @@ loginPageMessage msg loginPageData model =
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        LogoutButtonPressed ->
+            ( model
+            , Lamdera.sendToBackend ToBackendLogOut
+            )
+
         FrontendGalleryMsg routeId galleryMsg ->
             { model | rows = model.rows |> updateRowForGalleryMsg routeId galleryMsg }
                 |> withNoCommand
@@ -668,6 +673,7 @@ viewMainColumn model =
                 [ buttonToSendEvent "New Route" NewRouteButtonPressed
                 , buttonToSendEvent "Input Json" InputJsonButtonPressed
                 , buttonToSendEvent "View as Json" ViewAsJsonButtonPressed
+                , buttonToSendEvent "Log out" LogoutButtonPressed
                 ]
 
         RoutePage viewFilter ->
