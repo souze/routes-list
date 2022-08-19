@@ -153,7 +153,10 @@ removeOldSessions time =
 
 admins : List ( String, String )
 admins =
-    [ ( "admin", sha1 "boll" ) ]
+    [ ( "Pg1sF5DU93pgXGVObFeBJ3QYDig="
+      , "Af8loWCafTCTu22Nbd3r6oi2l6A="
+      )
+    ]
 
 
 isAdmin : SessionId -> Dict SessionId SessionData -> Bool
