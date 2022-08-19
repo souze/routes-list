@@ -40,7 +40,7 @@ type AdminPage
     | AdminShowJson String
     | AdminAddUser String String
     | AdminRemoveUser String
-    | AdminChangePassword
+    | AdminChangePassword String String
 
 
 type alias LoginPageData =
@@ -114,6 +114,8 @@ type FieldType
     = FieldAddUserUsername
     | FieldAddUserPassword
     | FieldRemoveUserUsername
+    | FieldChangePasswordUsername
+    | FieldChangePasswordPassword
 
 
 type FrontendMsg
@@ -124,6 +126,7 @@ type FrontendMsg
     | FrontendGalleryMsg RouteId Gallery.Msg
     | FrontendMsgAddUser String String
     | FrontendMsgRemoveUser String
+    | FrontendMsgAdminChangePassword String String
     | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
     | ViewAsJsonButtonPressed
@@ -154,6 +157,7 @@ type AdminMsg
     = AddUser { username : String, password : String }
     | RemoveUser String
     | RequestModel
+    | AdminMsgChangePassword { username : String, password : String }
 
 
 type ToBackend

@@ -126,10 +126,27 @@ update msg model =
                 AdminPage (AdminRemoveUser username) ->
                     { model | page = AdminPage (AdminRemoveUser newValue) }
 
+                AdminPage (AdminChangePassword username password) ->
+                    case field of
+                        FieldChangePasswordUsername ->
+                            { model | page = AdminPage (AdminChangePassword newValue password) }
+
+                        FieldChangePasswordPassword ->
+                            { model | page = AdminPage (AdminChangePassword username newValue) }
+
+                        _ ->
+                            model
+
                 _ ->
                     model
             )
                 |> withNoCommand
+
+        FrontendMsgAdminChangePassword username password ->
+            ( model
+            , Lamdera.sendToBackend <|
+                ToBackendAdminMsg (AdminMsgChangePassword { username = username, password = password })
+            )
 
         FrontendMsgAddUser username password ->
             ( { model | page = AdminPage AdminHomePage }
@@ -752,7 +769,7 @@ viewMainColumn model =
                         , buttonToSendEvent "Input Json" (FrontendMsgGoToPage (AdminPage AdminInputJson))
                         , buttonToSendEvent "Add user" (FrontendMsgGoToPage (AdminPage (AdminAddUser "" "")))
                         , buttonToSendEvent "Remove user" (FrontendMsgGoToPage (AdminPage (AdminRemoveUser "")))
-                        , buttonToSendEvent "Change password for user" (FrontendMsgGoToPage (AdminPage AdminChangePassword))
+                        , buttonToSendEvent "Change password for user" (FrontendMsgGoToPage (AdminPage (AdminChangePassword "" "")))
                         , buttonToSendEvent "Log out" LogoutButtonPressed
                         ]
 
@@ -788,8 +805,21 @@ viewMainColumn model =
                         , buttonToSendEvent "Submit" (FrontendMsgRemoveUser username)
                         ]
 
-                    AdminChangePassword ->
-                        [ Element.text "Not yet implemented" ]
+                    AdminChangePassword username password ->
+                        [ Element.Input.text []
+                            { onChange = FrontendMsgFieldUpdate FieldChangePasswordUsername
+                            , text = username
+                            , placeholder = Nothing
+                            , label = Element.Input.labelAbove [] (Element.text "Username")
+                            }
+                        , Element.Input.text []
+                            { onChange = FrontendMsgFieldUpdate FieldChangePasswordPassword
+                            , text = password
+                            , placeholder = Nothing
+                            , label = Element.Input.labelAbove [] (Element.text "Password")
+                            }
+                        , buttonToSendEvent "Submit" (FrontendMsgAdminChangePassword username password)
+                        ]
                 )
 
         SpinnerPage text ->

@@ -237,6 +237,9 @@ updateFromAdmin clientId msg model =
 
         RequestModel ->
             model
+
+        AdminMsgChangePassword { username, password } ->
+            { model | users = model.users |> changePassword username password }
     )
         |> updateAndSendWholeModel clientId
 
@@ -246,6 +249,13 @@ updateAndSendWholeModel clientId model =
     ( model
     , Lamdera.sendToFrontend clientId <| ToFrontendAdminWholeModel (getBackupModel model)
     )
+
+
+changePassword : String -> Password -> Dict String UserData -> Dict String UserData
+changePassword username password users =
+    users
+        |> Dict.update username
+                    (Maybe.map (\user -> { user | password = sha1 password }))
 
 
 newUser : String -> Password -> Dict String UserData -> Dict String UserData

@@ -5,10 +5,9 @@ V1
 
 * Multi user
     * Change password
-    * Admin pane (Separate user)
-        * Reset user password - with confirmation
 
 Later
+* Nicer wrong username/password information
 * sort order
 * Pictures and Videos from link
 * Admin Json in
