@@ -28,6 +28,7 @@ type Page
     | InputJsonPage String (Maybe JsonError)
     | ConfirmPage { text : String, label : String, code : String, event : ToBackend, abortPage : Page }
     | ViewJsonPage
+    | ChangePasswordPage { oldPassword : String, newPassword : String, newPassword2 : String, status : String }
     | LoginPage LoginPageData
     | MoreOptionsPage
     | SpinnerPage String
@@ -116,6 +117,9 @@ type FieldType
     | FieldRemoveUserUsername
     | FieldChangePasswordUsername
     | FieldChangePasswordPassword
+    | FieldUserChangePasswordOldPass
+    | FieldUserChangePasswordNewPass
+    | FieldUserChangePasswordNewPass2
 
 
 type FrontendMsg
@@ -127,6 +131,7 @@ type FrontendMsg
     | FrontendMsgAddUser String String
     | FrontendMsgRemoveUser String
     | FrontendMsgAdminChangePassword String String
+    | FrontendMsgUserChangePassword { oldPassword : String, newPassword : String, newPassword2 : String }
     | LoginPageMsg LoginPageMsg
     | InputJsonButtonPressed
     | ViewAsJsonButtonPressed
@@ -169,6 +174,7 @@ type ToBackend
     | ToBackendLogIn String String
     | ToBackendRefreshSession
     | ToBackendAdminMsg AdminMsg
+    | ToBackendUserChangePass { oldPassword : String, newPassword : String }
     | NoOpToBackend
 
 
@@ -183,6 +189,8 @@ type alias BackendMsg =
 
 type ToFrontend
     = AllRoutesAnnouncement (List RouteData)
+    | ToFrontendUserNewPasswordAccepted
+    | ToFrontendUserNewPasswordRejected
     | ToFrontendYouAreAdmin
     | ToFrontendAdminWholeModel BackupModel
     | ToFrontendWrongUserNamePassword

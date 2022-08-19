@@ -255,7 +255,7 @@ changePassword : String -> Password -> Dict String UserData -> Dict String UserD
 changePassword username password users =
     users
         |> Dict.update username
-                    (Maybe.map (\user -> { user | password = sha1 password }))
+            (Maybe.map (\user -> { user | password = sha1 password }))
 
 
 newUser : String -> Password -> Dict String UserData -> Dict String UserData
@@ -370,6 +370,17 @@ updateFromFrontendLoggedIn sessionId clientId msg userData =
         ToBackendRefreshSession ->
             -- Already handled before, will never happen
             userData |> withNoCommand
+
+        ToBackendUserChangePass { oldPassword, newPassword } ->
+            if sha1 oldPassword == userData.password then
+                ( { userData | password = sha1 newPassword }
+                , Lamdera.sendToFrontend clientId <| ToFrontendUserNewPasswordAccepted
+                )
+
+            else
+                ( userData
+                , Lamdera.sendToFrontend clientId <| ToFrontendUserNewPasswordRejected
+                )
 
         ToBackendResetRouteList newRoutes ->
             let

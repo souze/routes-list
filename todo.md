@@ -3,8 +3,7 @@
 
 V1
 
-* Multi user
-    * Change password
+* Proper username/password fields
 
 Later
 * Nicer wrong username/password information

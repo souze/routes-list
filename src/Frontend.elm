@@ -111,36 +111,50 @@ update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
         FrontendMsgFieldUpdate field newValue ->
-            (case model.page of
-                AdminPage (AdminAddUser username password) ->
-                    case field of
-                        FieldAddUserUsername ->
-                            { model | page = AdminPage (AdminAddUser newValue password) }
+            (case ( model.page, field ) of
+                ( AdminPage (AdminAddUser username password), FieldAddUserUsername ) ->
+                    { model | page = AdminPage (AdminAddUser newValue password) }
 
-                        FieldAddUserPassword ->
-                            { model | page = AdminPage (AdminAddUser username newValue) }
+                ( AdminPage (AdminAddUser username password), FieldAddUserPassword ) ->
+                    { model | page = AdminPage (AdminAddUser username newValue) }
 
-                        _ ->
-                            model
-
-                AdminPage (AdminRemoveUser username) ->
+                ( AdminPage (AdminRemoveUser username), _ ) ->
                     { model | page = AdminPage (AdminRemoveUser newValue) }
 
-                AdminPage (AdminChangePassword username password) ->
-                    case field of
-                        FieldChangePasswordUsername ->
-                            { model | page = AdminPage (AdminChangePassword newValue password) }
+                ( AdminPage (AdminChangePassword username password), FieldChangePasswordUsername ) ->
+                    { model | page = AdminPage (AdminChangePassword newValue password) }
 
-                        FieldChangePasswordPassword ->
-                            { model | page = AdminPage (AdminChangePassword username newValue) }
+                ( AdminPage (AdminChangePassword username password), FieldChangePasswordPassword ) ->
+                    { model | page = AdminPage (AdminChangePassword username newValue) }
 
-                        _ ->
-                            model
+                ( ChangePasswordPage attr, FieldUserChangePasswordOldPass ) ->
+                    { model | page = ChangePasswordPage { attr | oldPassword = newValue } }
+
+                ( ChangePasswordPage attr, FieldUserChangePasswordNewPass ) ->
+                    { model | page = ChangePasswordPage { attr | newPassword = newValue } }
+
+                ( ChangePasswordPage attr, FieldUserChangePasswordNewPass2 ) ->
+                    { model | page = ChangePasswordPage { attr | newPassword2 = newValue } }
 
                 _ ->
                     model
             )
                 |> withNoCommand
+
+        FrontendMsgUserChangePassword { oldPassword, newPassword, newPassword2 } ->
+            if newPassword == newPassword2 then
+                ( model
+                , Lamdera.sendToBackend <| ToBackendUserChangePass { oldPassword = oldPassword, newPassword = newPassword }
+                )
+
+            else
+                case model.page of
+                    ChangePasswordPage attr ->
+                        { model | page = ChangePasswordPage { attr | status = "New passwords don't match" } }
+                            |> withNoCommand
+
+                    _ ->
+                        model |> withNoCommand
 
         FrontendMsgAdminChangePassword username password ->
             ( model
@@ -658,6 +672,24 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
+        ToFrontendUserNewPasswordAccepted ->
+            case model.page of
+                ChangePasswordPage attr ->
+                    { model | page = ChangePasswordPage { oldPassword = "", newPassword = "", newPassword2 = "", status = "Success!" } }
+                        |> withNoCommand
+
+                _ ->
+                    model |> withNoCommand
+
+        ToFrontendUserNewPasswordRejected ->
+            case model.page of
+                ChangePasswordPage attr ->
+                    { model | page = ChangePasswordPage { attr | status = "That didn't work for some reason!" } }
+                        |> withNoCommand
+
+                _ ->
+                    model |> withNoCommand
+
         ToFrontendAdminWholeModel backupModel ->
             ( { model | page = AdminPage (AdminShowJson (backupModelToJsonStr backupModel)) }
             , Cmd.none
@@ -833,6 +865,7 @@ viewMainColumn model =
                 [ buttonToSendEvent "New Route" NewRouteButtonPressed
                 , buttonToSendEvent "Input Json" InputJsonButtonPressed
                 , buttonToSendEvent "View as Json" ViewAsJsonButtonPressed
+                , buttonToSendEvent "Change password" (FrontendMsgGoToPage (ChangePasswordPage { oldPassword = "", newPassword = "", newPassword2 = "", status = "" }))
                 , buttonToSendEvent "Log out" LogoutButtonPressed
                 ]
 
@@ -845,6 +878,40 @@ viewMainColumn model =
 
         NewRoutePage { routeData, datePickerData } ->
             mainColumnWithToprow [ viewNewRoute routeData datePickerData ]
+
+        ChangePasswordPage { oldPassword, newPassword, newPassword2, status } ->
+            mainColumnWithToprow
+                [ Element.Input.text []
+                    { onChange = FrontendMsgFieldUpdate FieldUserChangePasswordOldPass
+                    , text = oldPassword
+                    , placeholder = Just <| Element.Input.placeholder [] (Element.text "Old password")
+                    , label = Element.Input.labelAbove [] (Element.text "Old password")
+                    }
+                , Element.Input.text []
+                    { onChange = FrontendMsgFieldUpdate FieldUserChangePasswordNewPass
+                    , text = newPassword
+                    , placeholder = Just <| Element.Input.placeholder [] (Element.text "New password")
+                    , label = Element.Input.labelAbove [] (Element.text "New password")
+                    }
+                , Element.Input.text []
+                    { onChange = FrontendMsgFieldUpdate FieldUserChangePasswordNewPass2
+                    , text = newPassword2
+                    , placeholder = Just <| Element.Input.placeholder [] (Element.text "New password again")
+                    , label = Element.Input.labelAbove [] (Element.text "New password")
+                    }
+                , if status == "" then
+                    Element.none
+
+                  else
+                    Element.text status
+                , buttonToSendEvent "Submit"
+                    (FrontendMsgUserChangePassword
+                        { oldPassword = oldPassword
+                        , newPassword = newPassword
+                        , newPassword2 = newPassword2
+                        }
+                    )
+                ]
 
         InputJsonPage text err ->
             mainColumnWithToprow
