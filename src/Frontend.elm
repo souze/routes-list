@@ -818,11 +818,12 @@ viewMainColumn model =
                             , placeholder = Nothing
                             , label = Element.Input.labelAbove [] (Element.text "Username")
                             }
-                        , Element.Input.text []
+                        , Element.Input.newPassword []
                             { onChange = FrontendMsgFieldUpdate FieldAddUserPassword
                             , text = password
                             , placeholder = Nothing
                             , label = Element.Input.labelAbove [] (Element.text "Password")
+                            , show = False
                             }
                         , buttonToSendEvent "Submit" (FrontendMsgAddUser username password)
                         ]
@@ -844,11 +845,12 @@ viewMainColumn model =
                             , placeholder = Nothing
                             , label = Element.Input.labelAbove [] (Element.text "Username")
                             }
-                        , Element.Input.text []
+                        , Element.Input.newPassword []
                             { onChange = FrontendMsgFieldUpdate FieldChangePasswordPassword
                             , text = password
                             , placeholder = Nothing
                             , label = Element.Input.labelAbove [] (Element.text "Password")
+                            , show = False
                             }
                         , buttonToSendEvent "Submit" (FrontendMsgAdminChangePassword username password)
                         ]
@@ -881,23 +883,26 @@ viewMainColumn model =
 
         ChangePasswordPage { oldPassword, newPassword, newPassword2, status } ->
             mainColumnWithToprow
-                [ Element.Input.text []
+                [ Element.Input.currentPassword []
                     { onChange = FrontendMsgFieldUpdate FieldUserChangePasswordOldPass
                     , text = oldPassword
                     , placeholder = Just <| Element.Input.placeholder [] (Element.text "Old password")
                     , label = Element.Input.labelAbove [] (Element.text "Old password")
+                    , show = False
                     }
-                , Element.Input.text []
+                , Element.Input.newPassword []
                     { onChange = FrontendMsgFieldUpdate FieldUserChangePasswordNewPass
                     , text = newPassword
                     , placeholder = Just <| Element.Input.placeholder [] (Element.text "New password")
                     , label = Element.Input.labelAbove [] (Element.text "New password")
+                    , show = False
                     }
-                , Element.Input.text []
+                , Element.Input.newPassword []
                     { onChange = FrontendMsgFieldUpdate FieldUserChangePasswordNewPass2
                     , text = newPassword2
                     , placeholder = Just <| Element.Input.placeholder [] (Element.text "New password again")
                     , label = Element.Input.labelAbove [] (Element.text "New password")
+                    , show = False
                     }
                 , if status == "" then
                     Element.none
@@ -950,17 +955,18 @@ viewMainColumn model =
 
 viewLogin : LoginPageData -> List (Element.Element FrontendMsg)
 viewLogin data =
-    [ Element.Input.text []
+    [ Element.Input.username []
         { onChange = \s -> LoginPageMsg (LoginPageFieldChange FieldTypeUsername s)
         , text = data.username
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Username")
         }
-    , Element.Input.text []
+    , Element.Input.currentPassword []
         { onChange = \s -> LoginPageMsg (LoginPageFieldChange FieldTypePassword s)
         , text = data.password
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Password")
+        , show = False
         }
     , Element.Input.button []
         { onPress = Just <| LoginPageMsg LoginPageSubmit
