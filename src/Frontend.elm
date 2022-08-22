@@ -102,8 +102,10 @@ loginPageMessage msg loginPageData model =
 
         LoginPageSubmit ->
             ( model
-            , Lamdera.sendToBackend <|
-                ToBackendLogIn loginPageData.username loginPageData.password
+            , Cmd.batch
+                [ Lamdera.sendToBackend <|
+                    ToBackendLogIn loginPageData.username loginPageData.password
+                ]
             )
 
 
@@ -719,7 +721,7 @@ updateFromBackend msg model =
                             , page = RoutePage ViewAll
                         }
                    )
-            , Cmd.none
+            , Nav.pushUrl model.key "/routes"
             )
 
 
@@ -968,10 +970,7 @@ viewLogin data =
         , label = Element.Input.labelLeft [] (Element.text "Password")
         , show = False
         }
-    , Element.Input.button []
-        { onPress = Just <| LoginPageMsg LoginPageSubmit
-        , label = actionButtonLabel "Login"
-        }
+    , buttonToSendEvent "Login" <| LoginPageMsg LoginPageSubmit
     ]
 
 
