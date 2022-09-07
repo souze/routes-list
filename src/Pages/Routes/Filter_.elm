@@ -1,6 +1,7 @@
 module Pages.Routes.Filter_ exposing (Model, Msg, page)
 
 import Bridge
+import CommonView
 import Date exposing (Date)
 import DatePicker
 import Dict exposing (Dict)
@@ -374,7 +375,7 @@ view shared model =
 
 viewBody : Shared.Model -> Model -> Element Msg
 viewBody shared model =
-    mainColumnWithToprow
+    CommonView.mainColumnWithToprow
         (shared.routes
             |> toFrontendRowData model.metadatas
             |> filterAndSortView model.filter
@@ -433,16 +434,6 @@ logViewSorter rows =
     rows
         |> List.sortWith sorter
         |> List.reverse
-
-
-mainColumn : List (Element Msg) -> Element Msg
-mainColumn =
-    Element.column [ Element.spacing 10, Element.padding 20, Element.width Element.fill ]
-
-
-mainColumnWithToprow : List (Element Msg) -> Element Msg
-mainColumnWithToprow items =
-    mainColumn (viewTopRowButtons :: items)
 
 
 viewRoute : RowData -> Element Msg
@@ -522,7 +513,7 @@ viewRouteExpandedSolid rd =
                     ]
         , Element.Input.button []
             { onPress = Just <| ButtonPressed (EditRouteButton rd)
-            , label = actionButtonLabel "Edit"
+            , label = CommonView.actionButtonLabel "Edit"
             }
         ]
 
@@ -577,37 +568,6 @@ viewRouteOneline { realRoute } =
         }
 
 
-viewTopRowButtons : Element Msg
-viewTopRowButtons =
-    Element.row [ Element.spacing 10 ]
-        [ linkToRoute "Wishlist" <| Gen.Route.Routes__Filter_ { filter = "wishlist" }
-        , linkToRoute "Log" <| Gen.Route.Routes__Filter_ { filter = "log" }
-        , linkToRoute "All" <| Gen.Route.Routes__Filter_ { filter = "all" }
-        , linkToRoute "..." <| Gen.Route.MoreOptions
-        ]
-
-
-linkToRoute : String -> Gen.Route.Route -> Element Msg
-linkToRoute labelText route =
-    Element.link []
-        { url = Gen.Route.toHref route
-        , label = actionButtonLabel labelText
-        }
-
-
-buttonToSendEvent : String -> Msg -> Element Msg
-buttonToSendEvent labelText event =
-    Element.Input.button []
-        { onPress = Just event
-        , label = actionButtonLabel labelText
-        }
-
-
-actionButtonLabel : String -> Element msg
-actionButtonLabel text =
-    Element.el [ Element.Background.color (Element.rgb 0.6 0.6 0.6), Element.padding 8 ] (Element.text text)
-
-
 viewExistingOrNewRouteExpanded : RouteIdOrNew -> CommonRouteData a -> DatePickerData -> Element.Element Msg
 viewExistingOrNewRouteExpanded maybeId rd datePickerData =
     let
@@ -643,9 +603,9 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
         , Element.row [ Element.spacing 10 ]
             (case maybeId of
                 ExistingRoute routeId ->
-                    [ buttonToSendEvent "Save" <| ButtonPressed <| SaveButton (commonToExistingRoute routeId rd)
-                    , buttonToSendEvent "Discard" <| ButtonPressed <| DiscardButton routeId
-                    , buttonToSendEvent "Remove" <| ButtonPressed <| RemoveButton routeId
+                    [ CommonView.buttonToSendEvent "Save" <| ButtonPressed <| SaveButton (commonToExistingRoute routeId rd)
+                    , CommonView.buttonToSendEvent "Discard" <| ButtonPressed <| DiscardButton routeId
+                    , CommonView.buttonToSendEvent "Remove" <| ButtonPressed <| RemoveButton routeId
 
                     -- (MsgGoToPage
                     --     (ConfirmPage
@@ -662,7 +622,7 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
                 NewRouteId ->
                     [ Element.Input.button []
                         { onPress = Just <| ButtonPressed CreateButton
-                        , label = actionButtonLabel "Create"
+                        , label = CommonView.actionButtonLabel "Create"
                         }
                     ]
             )

@@ -1,6 +1,11 @@
 module Pages.MoreOptions exposing (Model, Msg, page)
 
+import Bridge
+import CommonView
+import Element exposing (Element)
 import Gen.Params.MoreOptions exposing (Params)
+import Gen.Route
+import Lamdera
 import Page
 import Request
 import Shared
@@ -9,12 +14,14 @@ import View exposing (View)
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    Page.element
-        { init = init
-        , update = update
-        , view = view
-        , subscriptions = subscriptions
-        }
+    Page.protected.element
+        (\user ->
+            { init = init
+            , update = update
+            , view = view
+            , subscriptions = subscriptions
+            }
+        )
 
 
 
@@ -35,14 +42,16 @@ init =
 
 
 type Msg
-    = ReplaceMe
+    = Logout
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReplaceMe ->
-            ( model, Cmd.none )
+        Logout ->
+            ( model
+            , Lamdera.sendToBackend Bridge.ToBackendLogOut
+            )
 
 
 
@@ -59,5 +68,18 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view model =
-    View.placeholder "MoreOptions"
+view _ =
+    { title = "More Options"
+    , body = viewBody
+    }
+
+
+viewBody : Element Msg
+viewBody =
+    CommonView.mainColumnWithToprow
+        [ CommonView.linkToRoute "New Route" Gen.Route.NewRoute
+        , CommonView.linkToRoute "Input Json" Gen.Route.InputJson
+        , CommonView.linkToRoute "View as Json" Gen.Route.OutputJson
+        , CommonView.linkToRoute "Change password" Gen.Route.ChangePassword
+        , CommonView.buttonToSendEvent "Log out" Logout
+        ]
