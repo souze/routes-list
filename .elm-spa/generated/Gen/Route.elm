@@ -6,8 +6,8 @@ module Gen.Route exposing
 
 import Gen.Params.Home_
 import Gen.Params.MoreOptions
-import Gen.Params.RouteList
 import Gen.Params.SignIn
+import Gen.Params.Routes.Filter_
 import Gen.Params.NotFound
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser)
@@ -16,8 +16,8 @@ import Url.Parser as Parser exposing ((</>), Parser)
 type Route
     = Home_
     | MoreOptions
-    | RouteList
     | SignIn
+    | Routes__Filter_ { filter : String }
     | NotFound
 
 
@@ -30,9 +30,9 @@ routes : List (Parser (Route -> a) a)
 routes =
     [ Parser.map Home_ Gen.Params.Home_.parser
     , Parser.map MoreOptions Gen.Params.MoreOptions.parser
-    , Parser.map RouteList Gen.Params.RouteList.parser
     , Parser.map SignIn Gen.Params.SignIn.parser
     , Parser.map NotFound Gen.Params.NotFound.parser
+    , Parser.map Routes__Filter_ Gen.Params.Routes.Filter_.parser
     ]
 
 
@@ -50,11 +50,11 @@ toHref route =
         MoreOptions ->
             joinAsHref [ "more-options" ]
     
-        RouteList ->
-            joinAsHref [ "route-list" ]
-    
         SignIn ->
             joinAsHref [ "sign-in" ]
+    
+        Routes__Filter_ params ->
+            joinAsHref [ "routes", params.filter ]
     
         NotFound ->
             joinAsHref [ "not-found" ]

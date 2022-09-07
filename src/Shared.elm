@@ -92,7 +92,7 @@ update req msg model =
                 | routes = newRoutes
                 , user = Just ()
               }
-            , Request.pushRoute Gen.Route.RouteList req
+            , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
             )
 
         SetCurrentDate date ->

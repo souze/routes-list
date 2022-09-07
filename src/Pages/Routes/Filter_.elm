@@ -1,4 +1,4 @@
-module Pages.RouteList exposing (Model, Msg, page)
+module Pages.Routes.Filter_ exposing (Model, Msg, page)
 
 import Bridge
 import Date exposing (Date)
@@ -10,7 +10,7 @@ import Element.Background
 import Element.Border
 import Element.Font
 import Element.Input
-import Gen.Params.RouteList exposing (Params)
+import Gen.Params.Routes.Filter_ exposing (Params)
 import Gen.Route
 import Html
 import Html.Attributes
@@ -27,7 +27,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.protected.element
         (\user ->
-            { init = init shared
+            { init = init req shared
             , update = update req
             , view = view shared
             , subscriptions = subscriptions
@@ -79,13 +79,38 @@ type alias Model =
     }
 
 
-init : Shared.Model -> ( Model, Cmd Msg )
-init shared =
-    ( { filter = ViewAll
-      , metadatas = Dict.empty
-      }
-    , Cmd.none
-    )
+init : Request.With Params -> Shared.Model -> ( Model, Cmd Msg )
+init req shared =
+    let
+        filter : Maybe ViewFilter
+        filter =
+            case req.params.filter of
+                "all" ->
+                    Just ViewAll
+
+                "wishlist" ->
+                    Just ViewWishlist
+
+                "log" ->
+                    Just ViewLog
+
+                _ ->
+                    Nothing
+    in
+    case filter of
+        Just filter_ ->
+            ( { filter = filter_
+              , metadatas = Dict.empty
+              }
+            , Cmd.none
+            )
+
+        Nothing ->
+            ( { filter = ViewAll
+              , metadatas = Dict.empty
+              }
+            , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
+            )
 
 
 toFrontendRowData : Dict Int Metadata -> List RouteData -> List RowData
@@ -260,10 +285,6 @@ updateEditRouteField fieldName newValue rd =
 type ButtonId
     = ExpandRouteButton RouteId
     | EditRouteButton RouteData
-    | WishListButton
-    | LogButton
-    | AllButton
-    | MoreOptionsButton
     | SaveButton RouteData
     | DiscardButton RouteId
     | RemoveButton RouteId
@@ -281,26 +302,6 @@ buttonPressed id req model =
         EditRouteButton route ->
             ( enableEdit route model
             , Cmd.none
-            )
-
-        WishListButton ->
-            ( { model | filter = ViewWishlist }
-            , Cmd.none
-            )
-
-        LogButton ->
-            ( { model | filter = ViewLog }
-            , Cmd.none
-            )
-
-        AllButton ->
-            ( { model | filter = ViewAll }
-            , Cmd.none
-            )
-
-        MoreOptionsButton ->
-            ( model
-            , Request.pushRoute Gen.Route.MoreOptions req
             )
 
         SaveButton route ->
@@ -579,11 +580,19 @@ viewRouteOneline { realRoute } =
 viewTopRowButtons : Element Msg
 viewTopRowButtons =
     Element.row [ Element.spacing 10 ]
-        [ buttonToSendEvent "Wishlist" (ButtonPressed WishListButton)
-        , buttonToSendEvent "Log" (ButtonPressed LogButton)
-        , buttonToSendEvent "All" (ButtonPressed AllButton)
-        , buttonToSendEvent "..." (ButtonPressed MoreOptionsButton)
+        [ linkToRoute "Wishlist" <| Gen.Route.Routes__Filter_ { filter = "wishlist" }
+        , linkToRoute "Log" <| Gen.Route.Routes__Filter_ { filter = "log" }
+        , linkToRoute "All" <| Gen.Route.Routes__Filter_ { filter = "all" }
+        , linkToRoute "..." <| Gen.Route.MoreOptions
         ]
+
+
+linkToRoute : String -> Gen.Route.Route -> Element Msg
+linkToRoute labelText route =
+    Element.link []
+        { url = Gen.Route.toHref route
+        , label = actionButtonLabel labelText
+        }
 
 
 buttonToSendEvent : String -> Msg -> Element Msg

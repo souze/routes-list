@@ -5,8 +5,8 @@ import Effect exposing (Effect)
 import ElmSpa.Page
 import Gen.Params.Home_
 import Gen.Params.MoreOptions
-import Gen.Params.RouteList
 import Gen.Params.SignIn
+import Gen.Params.Routes.Filter_
 import Gen.Params.NotFound
 import Gen.Model as Model
 import Gen.Msg as Msg
@@ -14,8 +14,8 @@ import Gen.Route as Route exposing (Route)
 import Page exposing (Page)
 import Pages.Home_
 import Pages.MoreOptions
-import Pages.RouteList
 import Pages.SignIn
+import Pages.Routes.Filter_
 import Pages.NotFound
 import Request exposing (Request)
 import Shared
@@ -41,11 +41,11 @@ init route =
         Route.MoreOptions ->
             pages.moreOptions.init ()
     
-        Route.RouteList ->
-            pages.routeList.init ()
-    
         Route.SignIn ->
             pages.signIn.init ()
+    
+        Route.Routes__Filter_ params ->
+            pages.routes__filter_.init params
     
         Route.NotFound ->
             pages.notFound.init ()
@@ -57,11 +57,11 @@ update msg_ model_ =
         ( Msg.MoreOptions msg, Model.MoreOptions params model ) ->
             pages.moreOptions.update params msg model
     
-        ( Msg.RouteList msg, Model.RouteList params model ) ->
-            pages.routeList.update params msg model
-    
         ( Msg.SignIn msg, Model.SignIn params model ) ->
             pages.signIn.update params msg model
+    
+        ( Msg.Routes__Filter_ msg, Model.Routes__Filter_ params model ) ->
+            pages.routes__filter_.update params msg model
 
         _ ->
             \_ _ _ -> ( model_, Effect.none )
@@ -79,11 +79,11 @@ view model_ =
         Model.MoreOptions params model ->
             pages.moreOptions.view params model
     
-        Model.RouteList params model ->
-            pages.routeList.view params model
-    
         Model.SignIn params model ->
             pages.signIn.view params model
+    
+        Model.Routes__Filter_ params model ->
+            pages.routes__filter_.view params model
     
         Model.NotFound params ->
             pages.notFound.view params ()
@@ -101,11 +101,11 @@ subscriptions model_ =
         Model.MoreOptions params model ->
             pages.moreOptions.subscriptions params model
     
-        Model.RouteList params model ->
-            pages.routeList.subscriptions params model
-    
         Model.SignIn params model ->
             pages.signIn.subscriptions params model
+    
+        Model.Routes__Filter_ params model ->
+            pages.routes__filter_.subscriptions params model
     
         Model.NotFound params ->
             pages.notFound.subscriptions params ()
@@ -118,15 +118,15 @@ subscriptions model_ =
 pages :
     { home_ : Static Gen.Params.Home_.Params
     , moreOptions : Bundle Gen.Params.MoreOptions.Params Pages.MoreOptions.Model Pages.MoreOptions.Msg
-    , routeList : Bundle Gen.Params.RouteList.Params Pages.RouteList.Model Pages.RouteList.Msg
     , signIn : Bundle Gen.Params.SignIn.Params Pages.SignIn.Model Pages.SignIn.Msg
+    , routes__filter_ : Bundle Gen.Params.Routes.Filter_.Params Pages.Routes.Filter_.Model Pages.Routes.Filter_.Msg
     , notFound : Static Gen.Params.NotFound.Params
     }
 pages =
     { home_ = static Pages.Home_.view Model.Home_
     , moreOptions = bundle Pages.MoreOptions.page Model.MoreOptions Msg.MoreOptions
-    , routeList = bundle Pages.RouteList.page Model.RouteList Msg.RouteList
     , signIn = bundle Pages.SignIn.page Model.SignIn Msg.SignIn
+    , routes__filter_ = bundle Pages.Routes.Filter_.page Model.Routes__Filter_ Msg.Routes__Filter_
     , notFound = static Pages.NotFound.view Model.NotFound
     }
 
