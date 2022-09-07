@@ -29,7 +29,7 @@ page shared req =
     Page.protected.element
         (\user ->
             { init = init req shared
-            , update = update req
+            , update = update shared req
             , view = view shared
             , subscriptions = subscriptions
             }
@@ -74,6 +74,14 @@ initialMetadata =
     }
 
 
+initialMetadataToday : Date -> Metadata
+initialMetadataToday today =
+    { expanded = False
+    , datePickerData = { dateText = "", pickerModel = DatePicker.initWithToday today }
+    , editRoute = Nothing
+    }
+
+
 type alias Model =
     { filter : ViewFilter
     , metadatas : Dict Int Metadata
@@ -114,8 +122,8 @@ init req shared =
             )
 
 
-toFrontendRowData : Dict Int Metadata -> List RouteData -> List RowData
-toFrontendRowData metadatas routes =
+toFrontendRowData : Date -> Dict Int Metadata -> List RouteData -> List RowData
+toFrontendRowData today metadatas routes =
     routes
         |> List.map
             (\route ->
@@ -124,7 +132,7 @@ toFrontendRowData metadatas routes =
                     md =
                         metadatas
                             |> Dict.get (getIntId route.id)
-                            |> Maybe.withDefault initialMetadata
+                            |> Maybe.withDefault (initialMetadataToday today)
                 in
                 { expanded = md.expanded
                 , datePickerData = md.datePickerData
@@ -150,48 +158,51 @@ defaultDatePickerData =
 type Msg
     = ReplaceMe
     | ButtonPressed ButtonId
-    | FieldUpdated RouteIdOrNew String String
-    | DatePickerUpdate RouteIdOrNew DatePicker.ChangeEvent
+    | FieldUpdated RouteId String String
+    | DatePickerUpdate RouteId DatePicker.ChangeEvent
 
 
-update : Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
-update req msg model =
+update : Shared.Model -> Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
+update shared req msg model =
     case msg of
         ReplaceMe ->
             ( model, Cmd.none )
 
         ButtonPressed id ->
-            buttonPressed id req model
+            buttonPressed id req shared.currentDate model
 
         FieldUpdated routeId fieldName newValue ->
             ( fieldUpdated routeId fieldName newValue model
             , Cmd.none
             )
 
-        DatePickerUpdate routeIdOrNew updateEvent ->
-            ( updateDatePicker routeIdOrNew updateEvent model
+        DatePickerUpdate routeId updateEvent ->
+            ( updateDatePicker routeId updateEvent model
             , Cmd.none
             )
 
 
-updateDatePicker : RouteIdOrNew -> DatePicker.ChangeEvent -> Model -> Model
+updateDatePicker : RouteId -> DatePicker.ChangeEvent -> Model -> Model
 updateDatePicker routeId changeEvent model =
-    case routeId of
-        NewRouteId ->
-            model
-
-        ExistingRoute id ->
-            { model
-                | metadatas =
-                    model.metadatas
-                        |> mapRouteIdMetadata id (updateDateTickerInRow changeEvent)
-            }
+    { model
+        | metadatas =
+            model.metadatas
+                |> mapRouteIdMetadata routeId (updateDateTickerInRow changeEvent)
+    }
 
 
 mapRouteIdMetadata : RouteId -> (Metadata -> Metadata) -> Dict Int Metadata -> Dict Int Metadata
 mapRouteIdMetadata (RouteId id) f metadatas =
     Dict.get id metadatas
         |> Maybe.withDefault initialMetadata
+        |> f
+        |> (\md -> Dict.insert id md metadatas)
+
+
+mapRouteIdMetadataToday : Date -> RouteId -> (Metadata -> Metadata) -> Dict Int Metadata -> Dict Int Metadata
+mapRouteIdMetadataToday today (RouteId id) f metadatas =
+    Dict.get id metadatas
+        |> Maybe.withDefault (initialMetadataToday today)
         |> f
         |> (\md -> Dict.insert id md metadatas)
 
@@ -250,18 +261,13 @@ updateDatePickerData changeEvent currentDatePicked dpd =
             )
 
 
-fieldUpdated : RouteIdOrNew -> String -> String -> Model -> Model
+fieldUpdated : RouteId -> String -> String -> Model -> Model
 fieldUpdated routeId fieldName newValue model =
-    case routeId of
-        NewRouteId ->
-            model
-
-        ExistingRoute id ->
-            { model
-                | metadatas =
-                    model.metadatas
-                        |> mapRouteIdMetadataEditRoute id (updateEditRouteField fieldName newValue)
-            }
+    { model
+        | metadatas =
+            model.metadatas
+                |> mapRouteIdMetadataEditRoute routeId (updateEditRouteField fieldName newValue)
+    }
 
 
 updateEditRouteField : String -> String -> CommonRouteData a -> CommonRouteData a
@@ -292,11 +298,11 @@ type ButtonId
     | CreateButton
 
 
-buttonPressed : ButtonId -> Request.With params -> Model -> ( Model, Cmd Msg )
-buttonPressed id req model =
+buttonPressed : ButtonId -> Request.With params -> Date -> Model -> ( Model, Cmd Msg )
+buttonPressed id req today model =
     case id of
         ExpandRouteButton routeId ->
-            ( toggleExpansionRouteId routeId model
+            ( toggleExpansionRouteId routeId today model
             , Cmd.none
             )
 
@@ -344,12 +350,12 @@ enableEdit rd m =
     }
 
 
-toggleExpansionRouteId : RouteId -> Model -> Model
-toggleExpansionRouteId id m =
+toggleExpansionRouteId : RouteId -> Date -> Model -> Model
+toggleExpansionRouteId id today m =
     { m
         | metadatas =
             m.metadatas
-                |> mapRouteIdMetadata id (\md -> { md | expanded = not md.expanded })
+                |> mapRouteIdMetadataToday today id (\md -> { md | expanded = not md.expanded })
     }
 
 
@@ -377,7 +383,7 @@ viewBody : Shared.Model -> Model -> Element Msg
 viewBody shared model =
     CommonView.mainColumnWithToprow
         (shared.routes
-            |> toFrontendRowData model.metadatas
+            |> toFrontendRowData shared.currentDate model.metadatas
             |> filterAndSortView model.filter
             |> List.map viewRoute
         )
@@ -520,7 +526,7 @@ viewRouteExpandedSolid rd =
 
 viewRouteExpandedEdit : RouteData -> DatePickerData -> Element Msg
 viewRouteExpandedEdit rd datePickerData =
-    viewExistingOrNewRouteExpanded (ExistingRoute rd.id) rd datePickerData
+    viewExistingOrNewRouteExpanded rd.id rd datePickerData
 
 
 listAppendIf : Bool -> a -> List a -> List a
@@ -568,13 +574,13 @@ viewRouteOneline { realRoute } =
         }
 
 
-viewExistingOrNewRouteExpanded : RouteIdOrNew -> CommonRouteData a -> DatePickerData -> Element.Element Msg
-viewExistingOrNewRouteExpanded maybeId rd datePickerData =
+viewExistingOrNewRouteExpanded : RouteId -> CommonRouteData a -> DatePickerData -> Element.Element Msg
+viewExistingOrNewRouteExpanded routeId rd datePickerData =
     let
         onelineEdit : String -> String -> String -> Element.Element Msg
         onelineEdit name prettyName value =
             Element.Input.text []
-                { onChange = FieldUpdated maybeId name
+                { onChange = FieldUpdated routeId name
                 , text = value
                 , placeholder = Nothing
                 , label = Element.Input.labelLeft [] (Element.text prettyName)
@@ -585,7 +591,7 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
         , onelineEdit "area" "Area" rd.area
         , onelineEdit "grade" "Grade" rd.grade
         , DatePicker.input []
-            { onChange = DatePickerUpdate maybeId
+            { onChange = DatePickerUpdate routeId
             , selected = rd.tickDate2
             , text = datePickerData.dateText
             , label = Element.Input.labelLeft [] <| Element.text "Tickdate"
@@ -594,36 +600,26 @@ viewExistingOrNewRouteExpanded maybeId rd datePickerData =
             , model = datePickerData.pickerModel
             }
         , Element.Input.multiline [ Element.width Element.fill ]
-            { onChange = FieldUpdated maybeId "notes"
+            { onChange = FieldUpdated routeId "notes"
             , text = rd.notes
             , placeholder = Nothing
             , label = Element.Input.labelAbove [] (Element.text "Notes")
             , spellcheck = True
             }
         , Element.row [ Element.spacing 10 ]
-            (case maybeId of
-                ExistingRoute routeId ->
-                    [ CommonView.buttonToSendEvent "Save" <| ButtonPressed <| SaveButton (commonToExistingRoute routeId rd)
-                    , CommonView.buttonToSendEvent "Discard" <| ButtonPressed <| DiscardButton routeId
-                    , CommonView.buttonToSendEvent "Remove" <| ButtonPressed <| RemoveButton routeId
+            [ CommonView.buttonToSendEvent "Save" <| ButtonPressed <| SaveButton (commonToExistingRoute routeId rd)
+            , CommonView.buttonToSendEvent "Discard" <| ButtonPressed <| DiscardButton routeId
+            , CommonView.buttonToSendEvent "Remove" <| ButtonPressed <| RemoveButton routeId
 
-                    -- (MsgGoToPage
-                    --     (ConfirmPage
-                    --         { text = ""
-                    --         , label = "Are you sure you want to remove the route \"" ++ rd.name ++ "\"?"
-                    --         , code = "remove"
-                    --         , event = RemoveRoute routeId
-                    --         , abortPage = RoutePage ViewAll
-                    --         }
-                    --     )
-                    -- )
-                    ]
-
-                NewRouteId ->
-                    [ Element.Input.button []
-                        { onPress = Just <| ButtonPressed CreateButton
-                        , label = CommonView.actionButtonLabel "Create"
-                        }
-                    ]
-            )
+            -- (MsgGoToPage
+            --     (ConfirmPage
+            --         { text = ""
+            --         , label = "Are you sure you want to remove the route \"" ++ rd.name ++ "\"?"
+            --         , code = "remove"
+            --         , event = RemoveRoute routeId
+            --         , abortPage = RoutePage ViewAll
+            --         }
+            --     )
+            -- )
+            ]
         ]

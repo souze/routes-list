@@ -40,6 +40,19 @@ type alias RouteData =
     }
 
 
+initialNewRouteData : NewRouteData
+initialNewRouteData =
+    { name = ""
+    , area = ""
+    , grade = ""
+    , notes = ""
+    , tickDate2 = Nothing
+    , type_ = Trad
+    , images = []
+    , videos = []
+    }
+
+
 type alias NewRouteData =
     { name : String
     , area : String
