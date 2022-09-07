@@ -1,24 +1,29 @@
 module Types exposing (..)
 
 import BackendMsg
+import Bridge
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Date exposing (Date)
 import DatePicker
 import Dict exposing (Dict)
-import Gallery
+import Gen.Pages as Pages
 import Lamdera
 import Route exposing (..)
+import Shared
 import Time
 import Url exposing (Url)
 
 
 type alias FrontendModel =
-    { key : Key
+    { url : Url
+    , key : Key
+    , shared : Shared.Model
+    , page : Pages.Model
     , message : String
     , rows : List RowData
     , currentDate : Date
-    , page : Page
+    , currentPage : Page
     }
 
 
@@ -67,7 +72,6 @@ type alias DatePickerData =
 type alias RowData =
     { expanded : Bool
     , datePickerData : DatePickerData
-    , galleryState : Gallery.State
     , route : RouteDataEdit
     }
 
@@ -123,11 +127,12 @@ type FieldType
 
 
 type FrontendMsg
-    = UrlClicked UrlRequest
-    | UrlChanged Url
+    = ClickedLink UrlRequest
+    | ChangedUrl Url
+    | Shared Shared.Msg
+    | Page Pages.Msg
     | FrontendMsgFieldUpdate FieldType String
     | FrontendMsgAdminRequestModel
-    | FrontendGalleryMsg RouteId Gallery.Msg
     | FrontendMsgAddUser String String
     | FrontendMsgRemoveUser String
     | FrontendMsgAdminChangePassword String String
@@ -158,24 +163,8 @@ type FrontendMsg
     | NoOpFrontendMsg
 
 
-type AdminMsg
-    = AddUser { username : String, password : String }
-    | RemoveUser String
-    | RequestModel
-    | AdminMsgChangePassword { username : String, password : String }
-
-
-type ToBackend
-    = UpdateRoute RouteData
-    | RemoveRoute RouteId
-    | ToBackendCreateNewRoute NewRouteData
-    | ToBackendLogOut
-    | ToBackendResetRouteList (List NewRouteData)
-    | ToBackendLogIn String String
-    | ToBackendRefreshSession
-    | ToBackendAdminMsg AdminMsg
-    | ToBackendUserChangePass { oldPassword : String, newPassword : String }
-    | NoOpToBackend
+type alias ToBackend =
+    Bridge.ToBackend
 
 
 type alias BackendMsg =

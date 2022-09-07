@@ -8,6 +8,16 @@ type RouteId
     = RouteId Int
 
 
+getIntId : RouteId -> Int
+getIntId (RouteId id) =
+    id
+
+
+ridToString : RouteId -> String
+ridToString (RouteId id) =
+    "[" ++ String.fromInt id ++ "]"
+
+
 type RouteIdOrNew
     = ExistingRoute RouteId
     | NewRouteId
@@ -51,7 +61,7 @@ type alias CommonRouteData a =
         , tickDate2 : Maybe Date.Date
         , type_ : ClimbType
         , images : List String
-    , videos : List String
+        , videos : List String
     }
 
 

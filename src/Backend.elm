@@ -1,6 +1,7 @@
 module Backend exposing (..)
 
 import BackendMsg
+import Bridge exposing (..)
 import Dict exposing (Dict)
 import Element.Input exposing (username)
 import Element.Region exposing (announce)
@@ -168,7 +169,7 @@ isAdmin sessionId sessions =
         |> Maybe.withDefault False
 
 
-updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontend : SessionId -> ClientId -> Bridge.ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
         ToBackendAdminMsg adminMsg ->
@@ -303,7 +304,7 @@ sha1 =
     SHA1.fromString >> SHA1.toBase64
 
 
-updateFromFrontendNotLoggedIn : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontendNotLoggedIn : SessionId -> ClientId -> Bridge.ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontendNotLoggedIn sessionId clientId msg model =
     case msg of
         ToBackendLogIn username password ->
@@ -358,7 +359,7 @@ loginMember username password sessionId clientId model =
             ( model, Lamdera.sendToFrontend clientId <| ToFrontendWrongUserNamePassword )
 
 
-updateFromFrontendLoggedIn : SessionId -> ClientId -> ToBackend -> UserData -> ( UserData, Cmd BackendMsg )
+updateFromFrontendLoggedIn : SessionId -> ClientId -> Bridge.ToBackend -> UserData -> ( UserData, Cmd BackendMsg )
 updateFromFrontendLoggedIn sessionId clientId msg userData =
     let
         announceRoutes : List RouteData -> Cmd BackendMsg

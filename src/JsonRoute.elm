@@ -6,7 +6,6 @@ import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
 import Route exposing (ClimbType(..), NewRouteData, RouteData)
-import Types exposing (DatePickerData)
 
 
 decodeRouteList : Json.Decode.Decoder (List NewRouteData)
@@ -74,8 +73,8 @@ encodeRoute route =
          , ( "grade", Json.Encode.string route.grade )
          , ( "comments", Json.Encode.string route.notes )
          , ( "type", Json.Encode.string (Route.climbTypeToString route.type_) )
-         , ( "images", Json.Encode.list Json.Encode.string route.images)
-         , ( "videos", Json.Encode.list Json.Encode.string route.videos)
+         , ( "images", Json.Encode.list Json.Encode.string route.images )
+         , ( "videos", Json.Encode.list Json.Encode.string route.videos )
          ]
             ++ (case route.tickDate2 of
                     Just date ->
