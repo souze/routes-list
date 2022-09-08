@@ -8,7 +8,7 @@ import Effect
 import Element
 import Gen.Model
 import Gen.Pages as Pages
-import Gen.Route as Route
+import Gen.Route
 import Lamdera
 import Request
 import Shared
@@ -46,7 +46,7 @@ init url key =
             Shared.init (Request.create () url key) ()
 
         ( page, effect ) =
-            Pages.init (Route.fromUrl url) shared url key
+            Pages.init (Gen.Route.fromUrl url) shared url key
     in
     ( initialFrontendModel url key shared page
     , Cmd.batch
@@ -98,7 +98,7 @@ update msg model =
             if url.path /= model.url.path then
                 let
                     ( page, effect ) =
-                        Pages.init (Route.fromUrl url) model.shared url model.key
+                        Pages.init (Gen.Route.fromUrl url) model.shared url model.key
                 in
                 ( { model | url = url, page = page }
                 , Cmd.batch [ Effect.toCmd ( Shared, Page ) effect, scrollPageToTop ]
@@ -133,6 +133,9 @@ updateFromBackend msg model =
         AllRoutesAnnouncement routes ->
             sharedUpdate model (Shared.MsgFromBackend (Shared.AllRoutesAnnouncement routes))
 
+        ToFrontendYourNotLoggedIn ->
+            sharedUpdate model (Shared.MsgFromBackend Shared.LogOut)
+
         _ ->
             ( model, Cmd.none )
 
@@ -144,7 +147,7 @@ sharedUpdate model sharedMsg =
             Shared.update (Request.create () model.url model.key) sharedMsg model.shared
 
         ( page, effect ) =
-            Pages.init (Route.fromUrl model.url) shared model.url model.key
+            Pages.init (Gen.Route.fromUrl model.url) shared model.url model.key
     in
     if page == Gen.Model.Redirecting_ then
         ( { model | shared = shared, page = page }

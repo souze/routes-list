@@ -71,6 +71,7 @@ init _ _ =
 
 type SharedFromBackend
     = AllRoutesAnnouncement (List RouteData)
+    | LogOut
 
 
 type Msg
@@ -93,6 +94,11 @@ update req msg model =
                 , user = Just ()
               }
             , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
+            )
+
+        MsgFromBackend LogOut ->
+            ( model
+            , Request.pushRoute Gen.Route.SignIn req
             )
 
         SetCurrentDate date ->
