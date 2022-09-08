@@ -1,5 +1,6 @@
 module Pages.NewRoute exposing (Model, Msg, page)
 
+import Bridge
 import CommonView
 import Date exposing (Date)
 import DatePicker
@@ -7,6 +8,7 @@ import Element exposing (Element)
 import Element.Background
 import Element.Input
 import Gen.Params.NewRoute exposing (Params)
+import Lamdera
 import Page
 import Request
 import Route exposing (CommonRouteData, NewRouteData, RouteData)
@@ -69,7 +71,9 @@ update msg model =
             )
 
         CreateRoute ->
-            ( model, Cmd.none )
+            ( model
+            , Lamdera.sendToBackend <| Bridge.ToBackendCreateNewRoute model.route
+            )
 
 
 updateDatePicker : DatePicker.ChangeEvent -> Model -> Model
