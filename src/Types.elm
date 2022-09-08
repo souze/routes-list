@@ -1,6 +1,7 @@
 module Types exposing (..)
 
 import BackendMsg
+import BackupModel
 import Bridge
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
@@ -78,10 +79,6 @@ type alias RowData =
 
 type alias Password =
     String
-
-
-type alias BackupModel =
-    List { username : String, routes : List RouteData }
 
 
 type alias UserData =
@@ -181,7 +178,7 @@ type ToFrontend
     | ToFrontendUserNewPasswordAccepted
     | ToFrontendUserNewPasswordRejected
     | ToFrontendYouAreAdmin
-    | ToFrontendAdminWholeModel BackupModel
+    | ToFrontendAdminWholeModel BackupModel.BackupModel
     | ToFrontendWrongUserNamePassword
     | ToFrontendYourNotLoggedIn
     | NoOpToFrontend

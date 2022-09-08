@@ -19,12 +19,14 @@ import View exposing (View)
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    Page.element
-        { init = init
-        , update = update
-        , view = view (shared.routes |> List.length)
-        , subscriptions = \_ -> Sub.none
-        }
+    Page.protected.element
+        (\_ ->
+            { init = init
+            , update = update
+            , view = view (shared.routes |> List.length)
+            , subscriptions = \_ -> Sub.none
+            }
+        )
 
 
 

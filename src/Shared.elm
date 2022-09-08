@@ -36,8 +36,9 @@ type alias Model =
     }
 
 
-type alias User =
-    ()
+type User
+    = NormalUser
+    | AdminUser
 
 
 initialRoutes : List Route.RouteData
@@ -72,6 +73,7 @@ init _ _ =
 type SharedFromBackend
     = AllRoutesAnnouncement (List RouteData)
     | LogOut
+    | YouAreAdmin
 
 
 type Msg
@@ -91,14 +93,19 @@ update req msg model =
         MsgFromBackend (AllRoutesAnnouncement newRoutes) ->
             ( { model
                 | routes = newRoutes
-                , user = Just ()
+                , user = Just NormalUser
               }
             , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
             )
 
+        MsgFromBackend YouAreAdmin ->
+            ( { model | user = Just AdminUser }
+            , Request.pushRoute Gen.Route.Admin__Home_ req
+            )
+
         MsgFromBackend LogOut ->
-            ( model
-            , Request.pushRoute Gen.Route.SignIn req
+            ( { model | user = Nothing }
+            , Cmd.none
             )
 
         SetCurrentDate date ->

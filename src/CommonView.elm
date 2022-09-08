@@ -45,3 +45,11 @@ buttonToSendEvent labelText event =
         { onPress = Just event
         , label = actionButtonLabel labelText
         }
+
+
+adminPageWithItems : List (Element msg) -> Element msg
+adminPageWithItems items =
+    mainColumn
+        (linkToRoute "Home" Gen.Route.Admin__Home_
+            :: items
+        )

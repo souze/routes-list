@@ -1,6 +1,7 @@
 module Backend exposing (..)
 
 import BackendMsg
+import BackupModel
 import Bridge exposing (..)
 import Dict exposing (Dict)
 import Element.Input exposing (username)
@@ -280,7 +281,7 @@ newUser username password users =
                 }
 
 
-getBackupModel : Model -> BackupModel
+getBackupModel : Model -> BackupModel.BackupModel
 getBackupModel model =
     model.users
         |> Dict.toList

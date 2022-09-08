@@ -7,9 +7,11 @@ import Date
 import Effect
 import Element
 import Gen.Model
+import Gen.Msg
 import Gen.Pages as Pages
 import Gen.Route
 import Lamdera
+import Pages.Admin.ShowJson
 import Request
 import Shared
 import Task
@@ -111,13 +113,7 @@ update msg model =
             sharedUpdate model sharedMsg
 
         Page pageMsg ->
-            let
-                ( page, effect ) =
-                    Pages.update pageMsg model.page model.shared model.url model.key
-            in
-            ( { model | page = page }
-            , Effect.toCmd ( Shared, Page ) effect
-            )
+            pageUpdate pageMsg model
 
         NoOpFrontendMsg ->
             ( model, Cmd.none )
@@ -136,8 +132,25 @@ updateFromBackend msg model =
         ToFrontendYourNotLoggedIn ->
             sharedUpdate model (Shared.MsgFromBackend Shared.LogOut)
 
+        ToFrontendYouAreAdmin ->
+            sharedUpdate model (Shared.MsgFromBackend Shared.YouAreAdmin)
+
+        ToFrontendAdminWholeModel backupModel ->
+            pageUpdate (Gen.Msg.Admin__ShowJson (Pages.Admin.ShowJson.BackupModelFromBackend backupModel)) model
+
         _ ->
             ( model, Cmd.none )
+
+
+pageUpdate : Pages.Msg -> Model -> ( Model, Cmd Msg )
+pageUpdate pageMsg model =
+    let
+        ( page, effect ) =
+            Pages.update pageMsg model.page model.shared model.url model.key
+    in
+    ( { model | page = page }
+    , Effect.toCmd ( Shared, Page ) effect
+    )
 
 
 sharedUpdate : Model -> Shared.Msg -> ( Model, Cmd Msg )
