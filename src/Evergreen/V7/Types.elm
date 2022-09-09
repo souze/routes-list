@@ -2,8 +2,6 @@ module Evergreen.V7.Types exposing (..)
 
 import Browser
 import Browser.Navigation
-import Date
-import DatePicker
 import Dict
 import Evergreen.V7.BackendMsg
 import Evergreen.V7.BackupModel
@@ -49,64 +47,11 @@ type alias BackendModel =
     }
 
 
-type FieldType
-    = FieldAddUserUsername
-    | FieldAddUserPassword
-    | FieldRemoveUserUsername
-    | FieldChangePasswordUsername
-    | FieldChangePasswordPassword
-    | FieldUserChangePasswordOldPass
-    | FieldUserChangePasswordNewPass
-    | FieldUserChangePasswordNewPass2
-
-
-type LoginFieldType
-    = FieldTypeUsername
-    | FieldTypePassword
-
-
-type LoginPageMsg
-    = LoginPageFieldChange LoginFieldType String
-    | LoginPageSubmit
-
-
 type FrontendMsg
     = ClickedLink Browser.UrlRequest
     | ChangedUrl Url.Url
     | Shared Evergreen.V7.Shared.Msg
     | Page Evergreen.V7.Gen.Pages.Msg
-    | FrontendMsgFieldUpdate FieldType String
-    | FrontendMsgAdminRequestModel
-    | FrontendMsgAddUser String String
-    | FrontendMsgRemoveUser String
-    | FrontendMsgAdminChangePassword String String
-    | FrontendMsgUserChangePassword
-        { oldPassword : String
-        , newPassword : String
-        , newPassword2 : String
-        }
-    | LoginPageMsg LoginPageMsg
-    | InputJsonButtonPressed
-    | ViewAsJsonButtonPressed
-    | LogoutButtonPressed
-    | RouteButtonClicked Evergreen.V7.Route.RouteId
-    | EditRouteEnable Evergreen.V7.Route.RouteId
-    | EditRouteSave Evergreen.V7.Route.RouteData
-    | EditRouteRemove Evergreen.V7.Route.RouteId
-    | EditRouteDiscardChanges Evergreen.V7.Route.RouteId
-    | EditRouteUpdated Evergreen.V7.Route.RouteIdOrNew String String
-    | JsonInputTextChanged String
-    | FrontendMsgConfirmButtonPressed
-    | JsonInputSubmitButtonPressed
-    | NewRouteButtonPressed
-    | WishlistButtonPressed
-    | LogButtonPressed
-    | ViewAllButtonPressed
-    | MoreOptionsButtonPressed
-    | CreateNewRoute
-    | SetCurrentDate Date.Date
-    | DatePickerUpdate Evergreen.V7.Route.RouteIdOrNew DatePicker.ChangeEvent
-    | SendRefreshSessionToBackend Time.Posix
     | NoOpFrontendMsg
 
 

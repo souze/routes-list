@@ -37,8 +37,3 @@ type alias NewRouteData =
     , images : List String
     , videos : List String
     }
-
-
-type RouteIdOrNew
-    = ExistingRoute RouteId
-    | NewRouteId
