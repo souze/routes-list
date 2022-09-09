@@ -39,10 +39,6 @@ type alias JsonError =
     String
 
 
-type alias ToBackend =
-    Evergreen.V6.Bridge.ToBackend
-
-
 type alias LoginPageData =
     { username : String
     , password : String
