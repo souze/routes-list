@@ -22,7 +22,6 @@ type alias FrontendModel =
     , shared : Evergreen.V7.Shared.Model
     , page : Evergreen.V7.Gen.Pages.Model
     , message : String
-    , currentDate : Date.Date
     }
 
 

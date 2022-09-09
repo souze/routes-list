@@ -22,7 +22,6 @@ type alias FrontendModel =
     , shared : Shared.Model
     , page : Pages.Model
     , message : String
-    , currentDate : Date
     }
 
 
