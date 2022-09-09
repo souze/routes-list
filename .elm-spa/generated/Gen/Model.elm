@@ -33,7 +33,7 @@ import Pages.NotFound
 type Model
     = Redirecting_
     | ChangePassword Gen.Params.ChangePassword.Params Pages.ChangePassword.Model
-    | Home_ Gen.Params.Home_.Params
+    | Home_ Gen.Params.Home_.Params Pages.Home_.Model
     | InputJson Gen.Params.InputJson.Params Pages.InputJson.Model
     | MoreOptions Gen.Params.MoreOptions.Params Pages.MoreOptions.Model
     | NewRoute Gen.Params.NewRoute.Params Pages.NewRoute.Model

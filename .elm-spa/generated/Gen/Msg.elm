@@ -32,6 +32,7 @@ import Pages.NotFound
 
 type Msg
     = ChangePassword Pages.ChangePassword.Msg
+    | Home_ Pages.Home_.Msg
     | InputJson Pages.InputJson.Msg
     | MoreOptions Pages.MoreOptions.Msg
     | NewRoute Pages.NewRoute.Msg

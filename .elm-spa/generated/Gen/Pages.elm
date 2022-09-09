@@ -102,6 +102,9 @@ update msg_ model_ =
         ( Msg.ChangePassword msg, Model.ChangePassword params model ) ->
             pages.changePassword.update params msg model
     
+        ( Msg.Home_ msg, Model.Home_ params model ) ->
+            pages.home_.update params msg model
+    
         ( Msg.InputJson msg, Model.InputJson params model ) ->
             pages.inputJson.update params msg model
     
@@ -148,8 +151,8 @@ view model_ =
         Model.ChangePassword params model ->
             pages.changePassword.view params model
     
-        Model.Home_ params ->
-            pages.home_.view params ()
+        Model.Home_ params model ->
+            pages.home_.view params model
     
         Model.InputJson params model ->
             pages.inputJson.view params model
@@ -197,8 +200,8 @@ subscriptions model_ =
         Model.ChangePassword params model ->
             pages.changePassword.subscriptions params model
     
-        Model.Home_ params ->
-            pages.home_.subscriptions params ()
+        Model.Home_ params model ->
+            pages.home_.subscriptions params model
     
         Model.InputJson params model ->
             pages.inputJson.subscriptions params model
@@ -243,7 +246,7 @@ subscriptions model_ =
 
 pages :
     { changePassword : Bundle Gen.Params.ChangePassword.Params Pages.ChangePassword.Model Pages.ChangePassword.Msg
-    , home_ : Static Gen.Params.Home_.Params
+    , home_ : Bundle Gen.Params.Home_.Params Pages.Home_.Model Pages.Home_.Msg
     , inputJson : Bundle Gen.Params.InputJson.Params Pages.InputJson.Model Pages.InputJson.Msg
     , moreOptions : Bundle Gen.Params.MoreOptions.Params Pages.MoreOptions.Model Pages.MoreOptions.Msg
     , newRoute : Bundle Gen.Params.NewRoute.Params Pages.NewRoute.Model Pages.NewRoute.Msg
@@ -259,7 +262,7 @@ pages :
     }
 pages =
     { changePassword = bundle Pages.ChangePassword.page Model.ChangePassword Msg.ChangePassword
-    , home_ = static Pages.Home_.view Model.Home_
+    , home_ = bundle Pages.Home_.page Model.Home_ Msg.Home_
     , inputJson = bundle Pages.InputJson.page Model.InputJson Msg.InputJson
     , moreOptions = bundle Pages.MoreOptions.page Model.MoreOptions Msg.MoreOptions
     , newRoute = bundle Pages.NewRoute.page Model.NewRoute Msg.NewRoute
