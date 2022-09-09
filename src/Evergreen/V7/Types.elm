@@ -21,7 +21,6 @@ type alias FrontendModel =
     , key : Browser.Navigation.Key
     , shared : Evergreen.V7.Shared.Model
     , page : Evergreen.V7.Gen.Pages.Model
-    , message : String
     }
 
 

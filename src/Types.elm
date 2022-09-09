@@ -21,7 +21,6 @@ type alias FrontendModel =
     , key : Key
     , shared : Shared.Model
     , page : Pages.Model
-    , message : String
     }
 
 

@@ -64,7 +64,6 @@ initialFrontendModel url key shared page =
     , key = key
     , shared = shared
     , page = page
-    , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
     }
 
 
