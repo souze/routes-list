@@ -70,68 +70,6 @@ type LoginPageMsg
     | LoginPageSubmit
 
 
-type ViewFilter
-    = ViewAll
-    | ViewLog
-    | ViewWishlist
-
-
-type alias DatePickerData =
-    { dateText : String
-    , pickerModel : DatePicker.Model
-    }
-
-
-type alias JsonError =
-    String
-
-
-type alias ToBackend =
-    Evergreen.V7.Bridge.ToBackend
-
-
-type alias LoginPageData =
-    { username : String
-    , password : String
-    }
-
-
-type AdminPage
-    = AdminHomePage
-    | AdminInputJson
-    | AdminShowJson String
-    | AdminAddUser String String
-    | AdminRemoveUser String
-    | AdminChangePassword String String
-
-
-type Page
-    = RoutePage ViewFilter
-    | NewRoutePage
-        { routeData : Evergreen.V7.Route.NewRouteData
-        , datePickerData : DatePickerData
-        }
-    | InputJsonPage String (Maybe JsonError)
-    | ConfirmPage
-        { text : String
-        , label : String
-        , code : String
-        , event : ToBackend
-        , abortPage : Page
-        }
-    | ViewJsonPage
-    | ChangePasswordPage
-        { oldPassword : String
-        , newPassword : String
-        , newPassword2 : String
-        , status : String
-        }
-    | LoginPage LoginPageData
-    | MoreOptionsPage
-    | SpinnerPage String
-    | AdminPage AdminPage
-
-
 type FrontendMsg
     = ClickedLink Browser.UrlRequest
     | ChangedUrl Url.Url
@@ -160,7 +98,6 @@ type FrontendMsg
     | JsonInputTextChanged String
     | FrontendMsgConfirmButtonPressed
     | JsonInputSubmitButtonPressed
-    | FrontendMsgGoToPage Page
     | NewRouteButtonPressed
     | WishlistButtonPressed
     | LogButtonPressed

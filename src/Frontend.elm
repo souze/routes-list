@@ -114,10 +114,6 @@ update msg model =
         NoOpFrontendMsg ->
             ( model, Cmd.none )
 
-        _ ->
-            -- TODO, separate FrontendMsg for page routing and FrontendMsg from old frontend
-            ( model, Cmd.none )
-
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =

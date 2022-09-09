@@ -24,55 +24,6 @@ type alias FrontendModel =
     }
 
 
-type Page
-    = RoutePage ViewFilter
-    | NewRoutePage { routeData : NewRouteData, datePickerData : DatePickerData }
-    | InputJsonPage String (Maybe JsonError)
-    | ConfirmPage { text : String, label : String, code : String, event : ToBackend, abortPage : Page }
-    | ViewJsonPage
-    | ChangePasswordPage { oldPassword : String, newPassword : String, newPassword2 : String, status : String }
-    | LoginPage LoginPageData
-    | MoreOptionsPage
-    | SpinnerPage String
-    | AdminPage AdminPage
-
-
-type AdminPage
-    = AdminHomePage
-    | AdminInputJson
-    | AdminShowJson String
-    | AdminAddUser String String
-    | AdminRemoveUser String
-    | AdminChangePassword String String
-
-
-type alias LoginPageData =
-    { username : String, password : String }
-
-
-type alias JsonError =
-    String
-
-
-type ViewFilter
-    = ViewAll
-    | ViewLog
-    | ViewWishlist
-
-
-type alias DatePickerData =
-    { dateText : String
-    , pickerModel : DatePicker.Model
-    }
-
-
-type alias RowData =
-    { expanded : Bool
-    , datePickerData : DatePickerData
-    , route : RouteDataEdit
-    }
-
-
 type alias Password =
     String
 
@@ -124,35 +75,6 @@ type FrontendMsg
     | ChangedUrl Url
     | Shared Shared.Msg
     | Page Pages.Msg
-    | FrontendMsgFieldUpdate FieldType String
-    | FrontendMsgAdminRequestModel
-    | FrontendMsgAddUser String String
-    | FrontendMsgRemoveUser String
-    | FrontendMsgAdminChangePassword String String
-    | FrontendMsgUserChangePassword { oldPassword : String, newPassword : String, newPassword2 : String }
-    | LoginPageMsg LoginPageMsg
-    | InputJsonButtonPressed
-    | ViewAsJsonButtonPressed
-    | LogoutButtonPressed
-    | RouteButtonClicked RouteId
-    | EditRouteEnable RouteId
-    | EditRouteSave RouteData
-    | EditRouteRemove RouteId
-    | EditRouteDiscardChanges RouteId
-    | EditRouteUpdated RouteIdOrNew String String
-    | JsonInputTextChanged String
-    | FrontendMsgConfirmButtonPressed
-    | JsonInputSubmitButtonPressed
-    | FrontendMsgGoToPage Page
-    | NewRouteButtonPressed
-    | WishlistButtonPressed
-    | LogButtonPressed
-    | ViewAllButtonPressed
-    | MoreOptionsButtonPressed
-    | CreateNewRoute
-    | SetCurrentDate Date
-    | DatePickerUpdate RouteIdOrNew DatePicker.ChangeEvent
-    | SendRefreshSessionToBackend Time.Posix
     | NoOpFrontendMsg
 
 
