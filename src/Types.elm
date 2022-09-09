@@ -24,7 +24,6 @@ type alias FrontendModel =
     , message : String
     , rows : List RowData
     , currentDate : Date
-    , currentPage : Page
     }
 
 

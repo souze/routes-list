@@ -29,6 +29,63 @@ type alias RowData =
     }
 
 
+type alias FrontendModel =
+    { url : Url.Url
+    , key : Browser.Navigation.Key
+    , shared : Evergreen.V7.Shared.Model
+    , page : Evergreen.V7.Gen.Pages.Model
+    , message : String
+    , rows : List RowData
+    , currentDate : Date.Date
+    }
+
+
+type alias SessionData =
+    { lastTouched : Time.Posix
+    , username : String
+    }
+
+
+type alias Password =
+    String
+
+
+type alias UserData =
+    { username : String
+    , password : Password
+    , routes : List Evergreen.V7.Route.RouteData
+    , nextId : Evergreen.V7.Route.RouteId
+    }
+
+
+type alias BackendModel =
+    { sessions : Dict.Dict Lamdera.SessionId SessionData
+    , users : Dict.Dict String UserData
+    , currentTime : Time.Posix
+    }
+
+
+type FieldType
+    = FieldAddUserUsername
+    | FieldAddUserPassword
+    | FieldRemoveUserUsername
+    | FieldChangePasswordUsername
+    | FieldChangePasswordPassword
+    | FieldUserChangePasswordOldPass
+    | FieldUserChangePasswordNewPass
+    | FieldUserChangePasswordNewPass2
+
+
+type LoginFieldType
+    = FieldTypeUsername
+    | FieldTypePassword
+
+
+type LoginPageMsg
+    = LoginPageFieldChange LoginFieldType String
+    | LoginPageSubmit
+
+
 type ViewFilter
     = ViewAll
     | ViewLog
@@ -83,64 +140,6 @@ type Page
     | MoreOptionsPage
     | SpinnerPage String
     | AdminPage AdminPage
-
-
-type alias FrontendModel =
-    { url : Url.Url
-    , key : Browser.Navigation.Key
-    , shared : Evergreen.V7.Shared.Model
-    , page : Evergreen.V7.Gen.Pages.Model
-    , message : String
-    , rows : List RowData
-    , currentDate : Date.Date
-    , currentPage : Page
-    }
-
-
-type alias SessionData =
-    { lastTouched : Time.Posix
-    , username : String
-    }
-
-
-type alias Password =
-    String
-
-
-type alias UserData =
-    { username : String
-    , password : Password
-    , routes : List Evergreen.V7.Route.RouteData
-    , nextId : Evergreen.V7.Route.RouteId
-    }
-
-
-type alias BackendModel =
-    { sessions : Dict.Dict Lamdera.SessionId SessionData
-    , users : Dict.Dict String UserData
-    , currentTime : Time.Posix
-    }
-
-
-type FieldType
-    = FieldAddUserUsername
-    | FieldAddUserPassword
-    | FieldRemoveUserUsername
-    | FieldChangePasswordUsername
-    | FieldChangePasswordPassword
-    | FieldUserChangePasswordOldPass
-    | FieldUserChangePasswordNewPass
-    | FieldUserChangePasswordNewPass2
-
-
-type LoginFieldType
-    = FieldTypeUsername
-    | FieldTypePassword
-
-
-type LoginPageMsg
-    = LoginPageFieldChange LoginFieldType String
-    | LoginPageSubmit
 
 
 type FrontendMsg
