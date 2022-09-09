@@ -39,12 +39,6 @@ type alias NewRouteData =
     }
 
 
-type alias RouteDataEdit =
-    { realRoute : RouteData
-    , editRoute : Maybe RouteData
-    }
-
-
 type RouteIdOrNew
     = ExistingRoute RouteId
     | NewRouteId

@@ -16,26 +16,12 @@ import Time
 import Url
 
 
-type alias DatePickerData =
-    { dateText : String
-    , pickerModel : DatePicker.Model
-    }
-
-
-type alias RowData =
-    { expanded : Bool
-    , datePickerData : DatePickerData
-    , route : Evergreen.V7.Route.RouteDataEdit
-    }
-
-
 type alias FrontendModel =
     { url : Url.Url
     , key : Browser.Navigation.Key
     , shared : Evergreen.V7.Shared.Model
     , page : Evergreen.V7.Gen.Pages.Model
     , message : String
-    , rows : List RowData
     , currentDate : Date.Date
     }
 
@@ -90,6 +76,12 @@ type ViewFilter
     = ViewAll
     | ViewLog
     | ViewWishlist
+
+
+type alias DatePickerData =
+    { dateText : String
+    , pickerModel : DatePicker.Model
+    }
 
 
 type alias JsonError =
