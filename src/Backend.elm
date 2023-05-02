@@ -15,6 +15,7 @@ import SHA1
 import Task
 import Time
 import Types exposing (..)
+import Env
 
 
 type alias Model =
@@ -155,8 +156,8 @@ removeOldSessions time =
 
 admins : List ( String, String )
 admins =
-    [ ( "Pg1sF5DU93pgXGVObFeBJ3QYDig="
-      , "Af8loWCafTCTu22Nbd3r6oi2l6A="
+    [ ( Env.adminUsername
+      , Env.adminPassword
       )
     ]
 
