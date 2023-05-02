@@ -6,6 +6,7 @@ import Bridge exposing (..)
 import Dict exposing (Dict)
 import Element.Input exposing (username)
 import Element.Region exposing (announce)
+import Env
 import Lamdera exposing (ClientId, SessionId)
 import List.Extra
 import Maybe.Extra
@@ -15,7 +16,6 @@ import SHA1
 import Task
 import Time
 import Types exposing (..)
-import Env
 
 
 type alias Model =
@@ -322,7 +322,7 @@ updateFromFrontendNotLoggedIn sessionId clientId msg model =
 
 loginAdmin : String -> String -> SessionId -> ClientId -> Model -> ( Model, Cmd BackendMsg )
 loginAdmin username password sessionId clientId model =
-    if List.member ( username, sha1 password ) admins then
+    if List.member ( username, password ) admins then
         ( { model
             | sessions =
                 model.sessions
