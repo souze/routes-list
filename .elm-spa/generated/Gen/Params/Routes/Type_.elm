@@ -4,7 +4,7 @@ import Url.Parser as Parser exposing ((</>), Parser)
 
 
 type alias Params =
-    { type : String }
+    { type_ : String }
 
 
 parser =
