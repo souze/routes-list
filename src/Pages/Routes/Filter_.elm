@@ -11,16 +11,20 @@ import Element.Background
 import Element.Border
 import Element.Font
 import Element.Input
+import Filter
 import Gen.Params.Routes.Filter_ exposing (Params)
 import Gen.Route
 import Html
 import Html.Attributes
 import Lamdera
+import List.Extra
 import Maybe.Extra
 import Page
 import Request
 import Route exposing (..)
+import Set exposing (Set)
 import Shared
+import Sorter
 import View exposing (View)
 
 
@@ -40,10 +44,10 @@ page shared req =
 -- INIT
 
 
-type ViewFilter
-    = ViewAll
-    | ViewLog
-    | ViewWishlist
+type alias Filter =
+    { filter : Filter.Model
+    , sorter : Sorter.Model
+    }
 
 
 type alias RowData =
@@ -83,7 +87,8 @@ initialMetadataToday today =
 
 
 type alias Model =
-    { filter : ViewFilter
+    { filter : Filter
+    , showSortBox : Bool
     , metadatas : Dict Int Metadata
     }
 
@@ -91,17 +96,17 @@ type alias Model =
 init : Request.With Params -> Shared.Model -> ( Model, Cmd Msg )
 init req shared =
     let
-        filter : Maybe ViewFilter
+        filter : Maybe Filter
         filter =
             case req.params.filter of
                 "all" ->
-                    Just ViewAll
+                    Just { filter = initialAllFilter, sorter = Sorter.initialModel }
 
                 "wishlist" ->
-                    Just ViewWishlist
+                    Just { filter = { initialAllFilter | tickdate = Filter.ShowWithoutTickdate }, sorter = Sorter.initialModel }
 
                 "log" ->
-                    Just ViewLog
+                    Just { filter = { initialAllFilter | tickdate = Filter.ShowHasTickdate }, sorter = Sorter.initialModel }
 
                 _ ->
                     Nothing
@@ -109,17 +114,24 @@ init req shared =
     case filter of
         Just filter_ ->
             ( { filter = filter_
+              , showSortBox = False
               , metadatas = Dict.empty
               }
             , Cmd.none
             )
 
         Nothing ->
-            ( { filter = ViewAll
+            ( { filter = { filter = initialAllFilter, sorter = Sorter.initialModel }
+              , showSortBox = False
               , metadatas = Dict.empty
               }
             , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
             )
+
+
+initialAllFilter : Filter.Model
+initialAllFilter =
+    Filter.initialModel
 
 
 toFrontendRowData : Date -> Dict Int Metadata -> List RouteData -> List RowData
@@ -144,29 +156,26 @@ toFrontendRowData today metadatas routes =
             )
 
 
-defaultDatePickerData : DatePickerData
-defaultDatePickerData =
-    { dateText = ""
-    , pickerModel = DatePicker.init
-    }
-
-
 
 -- UPDATE
 
 
 type Msg
-    = ReplaceMe
+    = ToggleFilters
     | ButtonPressed ButtonId
     | FieldUpdated RouteId String String
     | DatePickerUpdate RouteId DatePicker.ChangeEvent
+    | SortSelected Sorter.SorterMsg
+    | FilterMsg Filter.Msg
 
 
 update : Shared.Model -> Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
 update shared req msg model =
     case msg of
-        ReplaceMe ->
-            ( model, Cmd.none )
+        ToggleFilters ->
+            ( { model | showSortBox = not model.showSortBox }
+            , Cmd.none
+            )
 
         ButtonPressed id ->
             buttonPressed id req shared.currentDate model
@@ -180,6 +189,32 @@ update shared req msg model =
             ( updateDatePicker routeId updateEvent model
             , Cmd.none
             )
+
+        SortSelected sorterMsg ->
+            ( { model | filter = model.filter |> updateSorter sorterMsg }
+            , Cmd.none
+            )
+
+        FilterMsg filterMsg ->
+            ( { model | filter = model.filter |> updateFilter (uniqueGrades shared.routes) filterMsg }
+            , Cmd.none
+            )
+
+
+updateFilter : List String -> Filter.Msg -> Filter -> Filter
+updateFilter gradeOptions msg filter =
+    { filter
+        | filter =
+            Filter.update gradeOptions msg filter.filter
+    }
+
+
+updateSorter : Sorter.SorterMsg -> Filter -> Filter
+updateSorter msg filter =
+    { filter
+        | sorter =
+            Sorter.update msg filter.sorter
+    }
 
 
 updateDatePicker : RouteId -> DatePicker.ChangeEvent -> Model -> Model
@@ -381,65 +416,175 @@ view shared model =
 
 viewBody : Shared.Model -> Model -> Element Msg
 viewBody shared model =
-    CommonView.mainColumnWithToprow
-        (shared.routes
-            |> toFrontendRowData shared.currentDate model.metadatas
-            |> filterAndSortView model.filter
-            |> List.map viewRoute
+    CommonView.mainColumn
+        (CommonView.header
+            :: viewSortBox shared model
+            :: viewRouteList shared model
         )
 
 
-filterAndSortView : ViewFilter -> List RowData -> List RowData
-filterAndSortView viewFilter rows =
+viewSortBox : Shared.Model -> Model -> Element Msg
+viewSortBox shared model =
+    if model.showSortBox then
+        Element.column [ Element.spacing 10 ]
+            [ toggleFilterButton
+            , Filter.viewFilter FilterMsg model.filter.filter (shared.routes |> uniqueGrades)
+            , Sorter.sortOptions SortSelected model.filter.sorter
+            ]
+
+    else
+        toggleFilterButton
+
+
+toggleFilterButton : Element Msg
+toggleFilterButton =
+    CommonView.buttonToSendEvent "Filter" ToggleFilters
+
+
+uniqueGrades : List Route.RouteData -> List String
+uniqueGrades routes =
+    routes
+        |> List.map .grade
+        |> List.sort
+        |> List.Extra.unique
+
+
+viewRouteList : Shared.Model -> Model -> List (Element Msg)
+viewRouteList shared model =
+    shared.routes
+        |> toFrontendRowData shared.currentDate model.metadatas
+        |> filterAndSortView model.filter
+        |> List.map viewRoute
+
+
+filterAndSortView : Filter -> List RowData -> List RowData
+filterAndSortView filter rows =
     let
-        ( filter, sorter ) =
-            filterAndSorter viewFilter
+        ( filterF, sorterF ) =
+            filterAndSorter filter
     in
     rows
-        |> List.filter filter
-        |> sorter
+        |> List.filter filterF
+        |> sorterF
 
 
-filterAndSorter : ViewFilter -> ( RowData -> Bool, List RowData -> List RowData )
-filterAndSorter viewFilter =
-    case viewFilter of
-        ViewLog ->
-            ( \rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isJust
-            , logViewSorter
-            )
-
-        ViewWishlist ->
-            ( \rd -> rd.route.realRoute.tickDate2 |> Maybe.Extra.isNothing
-            , identity
-            )
-
-        ViewAll ->
-            ( \_ -> True
-            , identity
-            )
+filterAndSorter : Filter -> ( RowData -> Bool, List RowData -> List RowData )
+filterAndSorter { filter, sorter } =
+    ( applyCustomFilter filter
+    , applyCustomSorter sorter
+    )
 
 
-logViewSorter : List RowData -> List RowData
-logViewSorter rows =
-    let
-        sorter : RowData -> RowData -> Order
-        sorter rd1 rd2 =
-            case ( rd1.route.realRoute.tickDate2, rd2.route.realRoute.tickDate2 ) of
-                ( Just a, Just b ) ->
-                    Date.compare a b
+applyCustomSorter : Sorter.Model -> (List RowData -> List RowData)
+applyCustomSorter sortAttributes =
+    case List.head sortAttributes of
+        Nothing ->
+            identity
 
-                ( Just _, Nothing ) ->
-                    LT
+        Just ( attr, order ) ->
+            \l -> sortByAttr attr order l
 
-                ( Nothing, Just _ ) ->
-                    GT
 
-                _ ->
-                    LT
-    in
-    rows
-        |> List.sortWith sorter
-        |> List.reverse
+sortByAttr : Sorter.SortAttribute -> Sorter.SortOrder -> List RowData -> List RowData
+sortByAttr attr order l =
+    l
+        |> sortByAttr2 attr
+        |> maybeReverse order
+
+
+sortByAttr2 : Sorter.SortAttribute -> List RowData -> List RowData
+sortByAttr2 attr =
+    case attr of
+        Sorter.Tickdate ->
+            List.sortWith tickdateSorter
+
+        _ ->
+            List.sortBy (getComparableAttr attr)
+
+
+getComparableAttr : Sorter.SortAttribute -> RowData -> String
+getComparableAttr attr rd =
+    case attr of
+        Sorter.Name ->
+            rd.route.realRoute.name
+
+        Sorter.Grade ->
+            rd.route.realRoute.grade
+
+        Sorter.Area ->
+            rd.route.realRoute.area
+
+        _ ->
+            ""
+
+
+maybeReverse : Sorter.SortOrder -> List a -> List a
+maybeReverse order =
+    case order of
+        Sorter.Ascending ->
+            identity
+
+        Sorter.Descending ->
+            List.reverse
+
+
+applyCustomFilter : Filter.Model -> (RowData -> Bool)
+applyCustomFilter filter =
+    \rd ->
+        filterGrade filter.grade rd
+            && filterTickdate filter.tickdate rd
+
+
+filterTickdate : Filter.TickDateFilter -> (RowData -> Bool)
+filterTickdate filter =
+    case filter of
+        Filter.TickdateRangeFrom ->
+            \rd -> True
+
+        Filter.TickdateRangeTo ->
+            \rd -> True
+
+        Filter.TickdateRangeBetween ->
+            \rd -> True
+
+        Filter.ShowHasTickdate ->
+            hasTickDate
+
+        Filter.ShowWithoutTickdate ->
+            hasTickDate >> not
+
+        Filter.ShowAllTickdates ->
+            \_ -> True
+
+
+hasTickDate : RowData -> Bool
+hasTickDate rd =
+    rd.route.realRoute.tickDate2 |> Maybe.Extra.isJust
+
+
+filterGrade : Set String -> (RowData -> Bool)
+filterGrade filter =
+    if Set.isEmpty filter then
+        \_ -> True
+
+    else
+        \rd -> Set.member rd.route.realRoute.grade filter
+
+
+tickdateSorter : RowData -> RowData -> Order
+tickdateSorter rd1 rd2 =
+    case ( rd1.route.realRoute.tickDate2, rd2.route.realRoute.tickDate2 ) of
+        ( Just a, Just b ) ->
+            Date.compare a b
+
+        ( Just _, Nothing ) ->
+            GT
+
+        ( Nothing, Just _ ) ->
+            LT
+
+        _ ->
+            LT
 
 
 viewRoute : RowData -> Element Msg
