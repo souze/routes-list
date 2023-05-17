@@ -1,8 +1,8 @@
 module ConfirmComponent exposing
     ( ButtonText(..)
     , Description(..)
-    , Msg
-    , State
+    , Msg(..)
+    , State(..)
     , TargetText(..)
     , initialState
     , update

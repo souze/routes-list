@@ -1,4 +1,4 @@
-module Pages.Admin.AddUser exposing (Model, Msg, page)
+module Pages.Admin.AddUser exposing (Model, Msg(..), page)
 
 import Bridge
 import CommonView

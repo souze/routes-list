@@ -1,4 +1,4 @@
-module Pages.SignIn exposing (Model, Msg, page)
+module Pages.SignIn exposing (Model, Msg(..), page)
 
 import Bridge
 import Effect exposing (Effect)

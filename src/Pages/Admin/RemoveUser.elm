@@ -1,4 +1,4 @@
-module Pages.Admin.RemoveUser exposing (Model, Msg, page)
+module Pages.Admin.RemoveUser exposing (Model, Msg(..), page)
 
 import Bridge
 import CommonView

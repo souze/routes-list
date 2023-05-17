@@ -1,4 +1,4 @@
-module Pages.ChangePassword exposing (Model, Msg, page)
+module Pages.ChangePassword exposing (Model, Msg(..), page)
 
 import Bridge
 import CommonView

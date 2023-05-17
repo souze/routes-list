@@ -1,4 +1,4 @@
-module Pages.InputJson exposing (Model, Msg, page)
+module Pages.InputJson exposing (Model, Msg(..), page)
 
 import Bridge
 import CommonView

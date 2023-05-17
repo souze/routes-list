@@ -1,4 +1,4 @@
-module Pages.OutputJson exposing (Model, Msg, page)
+module Pages.OutputJson exposing (Model, Msg(..), page)
 
 import CommonView
 import Element exposing (Element)

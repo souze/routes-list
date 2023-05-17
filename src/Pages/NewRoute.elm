@@ -1,4 +1,4 @@
-module Pages.NewRoute exposing (Model, Msg, page)
+module Pages.NewRoute exposing (Model, Msg(..), page)
 
 import Bridge
 import CommonView
