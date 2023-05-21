@@ -79,7 +79,7 @@ rotateTickdateFilter filter =
 
 viewFilter : (Msg -> msg) -> Model -> List String -> Element msg
 viewFilter msgFn model uniqueGrades =
-    Element.column [ Element.spacing 5 ]
+    Element.column [ Element.spacing 5, Element.width Element.fill ]
         [ Element.text "Filters"
         , Element.row [ Element.spacing 10 ] [ Element.text "Grade", viewGradeFilter msgFn model.grade uniqueGrades ]
         , Element.row [ Element.spacing 10 ] [ Element.text "Tickdate", viewTickdateFilter msgFn model.tickdate ]
@@ -125,7 +125,15 @@ viewGradeFilter msgFn selected options =
     , onSelect = \i -> Just <| (PressedGradeFilter i |> msgFn)
     }
         |> Widget.multiSelect
-        |> Widget.buttonRow
-            { elementRow = Material.buttonRow
+        |> Widget.wrappedButtonRow
+            { elementRow = filledButtonRow
             , content = Material.containedButton Material.defaultPalette
             }
+
+filledButtonRow : Widget.RowStyle msg
+filledButtonRow =
+    let
+        br = Material.buttonRow
+    in
+    { br | elementRow = Element.width Element.fill :: br.elementRow }
+

@@ -198,7 +198,14 @@ select msgFn row selected =
     , onSelect = \i -> Just <| (SorterMsg { row = row, col = i } |> msgFn)
     }
         |> Widget.select
-        |> Widget.buttonRow
-            { elementRow = Material.buttonRow
+        |> Widget.wrappedButtonRow
+            { elementRow = filledButtonRow
             , content = Material.containedButton Material.defaultPalette
             }
+
+filledButtonRow : Widget.RowStyle msg
+filledButtonRow =
+    let
+        br = Material.buttonRow
+    in
+    { br | elementRow = Element.width Element.fill :: br.elementRow }
