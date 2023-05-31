@@ -78,6 +78,7 @@ viewBody : Element Msg
 viewBody =
     CommonView.mainColumnWithToprow
         [ CommonView.linkToRoute "New Route" Gen.Route.NewRoute
+        , CommonView.linkToRoute "Stats" Gen.Route.Stats
         , CommonView.linkToRoute "Input Json" Gen.Route.InputJson
         , CommonView.linkToRoute "View as Json" Gen.Route.OutputJson
         , CommonView.linkToRoute "Change password" Gen.Route.ChangePassword

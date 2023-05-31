@@ -10,13 +10,14 @@ import Gen.Params.InputJson
 import Gen.Params.MoreOptions
 import Gen.Params.NewRoute
 import Gen.Params.OutputJson
-import Gen.Params.SignIn
+import Gen.Params.Stats
 import Gen.Params.Admin.AddUser
 import Gen.Params.Admin.ChangePassword
 import Gen.Params.Admin.Home_
 import Gen.Params.Admin.RemoveUser
 import Gen.Params.Admin.ShowJson
 import Gen.Params.Routes.Filter_
+import Gen.Params.SignIn.SignInDest_
 import Gen.Params.NotFound
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser)
@@ -29,13 +30,14 @@ type Route
     | MoreOptions
     | NewRoute
     | OutputJson
-    | SignIn
+    | Stats
     | Admin__AddUser
     | Admin__ChangePassword
     | Admin__Home_
     | Admin__RemoveUser
     | Admin__ShowJson
     | Routes__Filter_ { filter : String }
+    | SignIn__SignInDest_ { signInDest : String }
     | NotFound
 
 
@@ -52,7 +54,7 @@ routes =
     , Parser.map MoreOptions Gen.Params.MoreOptions.parser
     , Parser.map NewRoute Gen.Params.NewRoute.parser
     , Parser.map OutputJson Gen.Params.OutputJson.parser
-    , Parser.map SignIn Gen.Params.SignIn.parser
+    , Parser.map Stats Gen.Params.Stats.parser
     , Parser.map NotFound Gen.Params.NotFound.parser
     , Parser.map Admin__AddUser Gen.Params.Admin.AddUser.parser
     , Parser.map Admin__ChangePassword Gen.Params.Admin.ChangePassword.parser
@@ -60,6 +62,7 @@ routes =
     , Parser.map Admin__ShowJson Gen.Params.Admin.ShowJson.parser
     , Parser.map Routes__Filter_ Gen.Params.Routes.Filter_.parser
     , Parser.map Admin__Home_ Gen.Params.Admin.Home_.parser
+    , Parser.map SignIn__SignInDest_ Gen.Params.SignIn.SignInDest_.parser
     ]
 
 
@@ -89,8 +92,8 @@ toHref route =
         OutputJson ->
             joinAsHref [ "output-json" ]
     
-        SignIn ->
-            joinAsHref [ "sign-in" ]
+        Stats ->
+            joinAsHref [ "stats" ]
     
         Admin__AddUser ->
             joinAsHref [ "admin", "add-user" ]
@@ -109,6 +112,9 @@ toHref route =
     
         Routes__Filter_ params ->
             joinAsHref [ "routes", params.filter ]
+    
+        SignIn__SignInDest_ params ->
+            joinAsHref [ "sign-in", params.signInDest ]
     
         NotFound ->
             joinAsHref [ "not-found" ]

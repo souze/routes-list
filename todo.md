@@ -1,16 +1,15 @@
 
 # todos
+(✅ 🚧 ❌ 🧱)
 
-V1
+V2
 
-Done?
-
-Later
+✅ SPA
+🚧 Custom sort/filter
+🚧 Graphs
 * Nicer wrong username/password information
-* Custom sort/filter
 * Pictures and Videos from link
 * Admin Json in
 * Show password checkbox
 * Submit on enter
-* Graphs
-* SPA
+* Get rid of annoying always-back-to-all-filter-view

@@ -41,4 +41,4 @@ beforeProtectedInit shared req =
             ElmSpa.Provide user
 
         Nothing ->
-            ElmSpa.RedirectTo Gen.Route.SignIn
+            ElmSpa.RedirectTo <| Gen.Route.SignIn__SignInDest_ { signInDest = req.url.path |> String.replace "/" "_" }

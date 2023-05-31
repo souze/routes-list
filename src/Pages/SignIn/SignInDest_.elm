@@ -1,16 +1,17 @@
-module Pages.SignIn exposing (Model, Msg(..), page)
+module Pages.SignIn.SignInDest_ exposing (Model, Msg(..), page)
 
-import Bridge
 import Effect exposing (Effect)
+import Bridge
+import Gen.Params.SignIn.SignInDest_ exposing (Params)
 import Element exposing (Element)
 import Element.Background
 import Element.Input
-import Gen.Params.SignIn exposing (Params)
 import Lamdera
 import Page
 import Request
 import Shared
 import View exposing (View)
+import Page
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -126,3 +127,4 @@ buttonToSendEvent labelText event =
         { onPress = Just event
         , label = actionButtonLabel labelText
         }
+

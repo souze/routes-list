@@ -9,13 +9,14 @@ import Gen.Params.InputJson
 import Gen.Params.MoreOptions
 import Gen.Params.NewRoute
 import Gen.Params.OutputJson
-import Gen.Params.SignIn
+import Gen.Params.Stats
 import Gen.Params.Admin.AddUser
 import Gen.Params.Admin.ChangePassword
 import Gen.Params.Admin.Home_
 import Gen.Params.Admin.RemoveUser
 import Gen.Params.Admin.ShowJson
 import Gen.Params.Routes.Filter_
+import Gen.Params.SignIn.SignInDest_
 import Gen.Params.NotFound
 import Gen.Model as Model
 import Gen.Msg as Msg
@@ -27,13 +28,14 @@ import Pages.InputJson
 import Pages.MoreOptions
 import Pages.NewRoute
 import Pages.OutputJson
-import Pages.SignIn
+import Pages.Stats
 import Pages.Admin.AddUser
 import Pages.Admin.ChangePassword
 import Pages.Admin.Home_
 import Pages.Admin.RemoveUser
 import Pages.Admin.ShowJson
 import Pages.Routes.Filter_
+import Pages.SignIn.SignInDest_
 import Pages.NotFound
 import Request exposing (Request)
 import Shared
@@ -71,8 +73,8 @@ init route =
         Route.OutputJson ->
             pages.outputJson.init ()
     
-        Route.SignIn ->
-            pages.signIn.init ()
+        Route.Stats ->
+            pages.stats.init ()
     
         Route.Admin__AddUser ->
             pages.admin__addUser.init ()
@@ -91,6 +93,9 @@ init route =
     
         Route.Routes__Filter_ params ->
             pages.routes__filter_.init params
+    
+        Route.SignIn__SignInDest_ params ->
+            pages.signIn__signInDest_.init params
     
         Route.NotFound ->
             pages.notFound.init ()
@@ -117,8 +122,8 @@ update msg_ model_ =
         ( Msg.OutputJson msg, Model.OutputJson params model ) ->
             pages.outputJson.update params msg model
     
-        ( Msg.SignIn msg, Model.SignIn params model ) ->
-            pages.signIn.update params msg model
+        ( Msg.Stats msg, Model.Stats params model ) ->
+            pages.stats.update params msg model
     
         ( Msg.Admin__AddUser msg, Model.Admin__AddUser params model ) ->
             pages.admin__addUser.update params msg model
@@ -137,6 +142,9 @@ update msg_ model_ =
     
         ( Msg.Routes__Filter_ msg, Model.Routes__Filter_ params model ) ->
             pages.routes__filter_.update params msg model
+    
+        ( Msg.SignIn__SignInDest_ msg, Model.SignIn__SignInDest_ params model ) ->
+            pages.signIn__signInDest_.update params msg model
 
         _ ->
             \_ _ _ -> ( model_, Effect.none )
@@ -166,8 +174,8 @@ view model_ =
         Model.OutputJson params model ->
             pages.outputJson.view params model
     
-        Model.SignIn params model ->
-            pages.signIn.view params model
+        Model.Stats params model ->
+            pages.stats.view params model
     
         Model.Admin__AddUser params model ->
             pages.admin__addUser.view params model
@@ -186,6 +194,9 @@ view model_ =
     
         Model.Routes__Filter_ params model ->
             pages.routes__filter_.view params model
+    
+        Model.SignIn__SignInDest_ params model ->
+            pages.signIn__signInDest_.view params model
     
         Model.NotFound params ->
             pages.notFound.view params ()
@@ -215,8 +226,8 @@ subscriptions model_ =
         Model.OutputJson params model ->
             pages.outputJson.subscriptions params model
     
-        Model.SignIn params model ->
-            pages.signIn.subscriptions params model
+        Model.Stats params model ->
+            pages.stats.subscriptions params model
     
         Model.Admin__AddUser params model ->
             pages.admin__addUser.subscriptions params model
@@ -236,6 +247,9 @@ subscriptions model_ =
         Model.Routes__Filter_ params model ->
             pages.routes__filter_.subscriptions params model
     
+        Model.SignIn__SignInDest_ params model ->
+            pages.signIn__signInDest_.subscriptions params model
+    
         Model.NotFound params ->
             pages.notFound.subscriptions params ()
 
@@ -251,13 +265,14 @@ pages :
     , moreOptions : Bundle Gen.Params.MoreOptions.Params Pages.MoreOptions.Model Pages.MoreOptions.Msg
     , newRoute : Bundle Gen.Params.NewRoute.Params Pages.NewRoute.Model Pages.NewRoute.Msg
     , outputJson : Bundle Gen.Params.OutputJson.Params Pages.OutputJson.Model Pages.OutputJson.Msg
-    , signIn : Bundle Gen.Params.SignIn.Params Pages.SignIn.Model Pages.SignIn.Msg
+    , stats : Bundle Gen.Params.Stats.Params Pages.Stats.Model Pages.Stats.Msg
     , admin__addUser : Bundle Gen.Params.Admin.AddUser.Params Pages.Admin.AddUser.Model Pages.Admin.AddUser.Msg
     , admin__changePassword : Bundle Gen.Params.Admin.ChangePassword.Params Pages.Admin.ChangePassword.Model Pages.Admin.ChangePassword.Msg
     , admin__home_ : Bundle Gen.Params.Admin.Home_.Params Pages.Admin.Home_.Model Pages.Admin.Home_.Msg
     , admin__removeUser : Bundle Gen.Params.Admin.RemoveUser.Params Pages.Admin.RemoveUser.Model Pages.Admin.RemoveUser.Msg
     , admin__showJson : Bundle Gen.Params.Admin.ShowJson.Params Pages.Admin.ShowJson.Model Pages.Admin.ShowJson.Msg
     , routes__filter_ : Bundle Gen.Params.Routes.Filter_.Params Pages.Routes.Filter_.Model Pages.Routes.Filter_.Msg
+    , signIn__signInDest_ : Bundle Gen.Params.SignIn.SignInDest_.Params Pages.SignIn.SignInDest_.Model Pages.SignIn.SignInDest_.Msg
     , notFound : Static Gen.Params.NotFound.Params
     }
 pages =
@@ -267,13 +282,14 @@ pages =
     , moreOptions = bundle Pages.MoreOptions.page Model.MoreOptions Msg.MoreOptions
     , newRoute = bundle Pages.NewRoute.page Model.NewRoute Msg.NewRoute
     , outputJson = bundle Pages.OutputJson.page Model.OutputJson Msg.OutputJson
-    , signIn = bundle Pages.SignIn.page Model.SignIn Msg.SignIn
+    , stats = bundle Pages.Stats.page Model.Stats Msg.Stats
     , admin__addUser = bundle Pages.Admin.AddUser.page Model.Admin__AddUser Msg.Admin__AddUser
     , admin__changePassword = bundle Pages.Admin.ChangePassword.page Model.Admin__ChangePassword Msg.Admin__ChangePassword
     , admin__home_ = bundle Pages.Admin.Home_.page Model.Admin__Home_ Msg.Admin__Home_
     , admin__removeUser = bundle Pages.Admin.RemoveUser.page Model.Admin__RemoveUser Msg.Admin__RemoveUser
     , admin__showJson = bundle Pages.Admin.ShowJson.page Model.Admin__ShowJson Msg.Admin__ShowJson
     , routes__filter_ = bundle Pages.Routes.Filter_.page Model.Routes__Filter_ Msg.Routes__Filter_
+    , signIn__signInDest_ = bundle Pages.SignIn.SignInDest_.page Model.SignIn__SignInDest_ Msg.SignIn__SignInDest_
     , notFound = static Pages.NotFound.view Model.NotFound
     }
 

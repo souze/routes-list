@@ -8,7 +8,9 @@ import Request exposing (Request)
 import Route exposing (..)
 import Task
 import Time
+import Url.Builder
 import View exposing (View)
+import Url exposing (Url)
 
 
 
@@ -85,8 +87,18 @@ update req msg model =
                 | routes = newRoutes
                 , user = Just NormalUser
               }
-            , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
-            )
+            ,
+            case req.route of
+                Gen.Route.SignIn__SignInDest_ { signInDest } ->
+                    let
+                        b = req.url
+                        a = Gen.Route.fromUrl ({b | path = String.replace "_" "/" signInDest})
+                    in
+                    Request.pushRoute (a) req
+
+                _ ->
+                    Cmd.none
+                    )
 
         MsgFromBackend YouAreAdmin ->
             ( { model | user = Just AdminUser }
