@@ -90,13 +90,13 @@ update req msg model =
             , case req.route of
                 Gen.Route.SignIn__SignInDest_ { signInDest } ->
                     let
-                        b =
+                        requestUrl =
                             req.url
 
-                        a =
-                            Gen.Route.fromUrl { b | path = String.replace "_" "/" signInDest }
+                        signinRoute =
+                            Gen.Route.fromUrl { requestUrl | path = String.replace "_" "/" signInDest }
                     in
-                    Request.pushRoute a req
+                    Request.pushRoute signinRoute req
 
                 _ ->
                     Cmd.none
