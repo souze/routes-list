@@ -1,20 +1,17 @@
-module Pages.Stats exposing (Model, Msg, page)
+module Pages.Stats exposing (Model, Msg, groupByGrade, page)
 
 import Chart as C
-import Dict exposing (Dict)
-import Route
 import Chart.Attributes as CA
 import CommonView
+import Dict exposing (Dict)
 import Element exposing (Element)
 import Gen.Params.Stats exposing (Params)
-import Html
-import Html.Attributes
+import Maybe.Extra
 import Page
 import Request
+import Route exposing (RouteData)
 import Shared
-import Svg exposing (Svg)
 import Svg.Attributes as SvgAttr
-import Time
 import View exposing (View)
 
 
@@ -78,34 +75,61 @@ viewBody shared model =
 
 viewStats : Shared.Model -> Model -> Element Msg
 viewStats shared model =
-    Element.column [] [
-            gradeChart shared.routes
+    Element.column [ Element.padding 15, Element.spacing 10 ]
+        [ Element.text "Routes climbed, by grade"
+        , gradeChart shared.routes
         ]
 
 
-gradeChart : List Route.RouteData -> Element msg
+gradeChart : List RouteData -> Element msg
 gradeChart routes =
+    let
+        data =
+            routes
+                |> List.filter (.tickDate2 >> Maybe.Extra.isJust)
+                -- Only climbed routes
+                |> groupByGrade
+                |> Dict.toList
+    in
     C.chart
-        [ CA.width 100
-        , CA.height 100
-        , CA.attrs [ SvgAttr.height "100" ]
+        [ CA.width 300
+        , CA.height 300
+        , CA.attrs
+            [ SvgAttr.height "300"
+            , SvgAttr.width "350"
+            , SvgAttr.viewBox "-40 -40 370 370"
+            , SvgAttr.preserveAspectRatio "none"
+            ]
         ]
-        [ C.xTicks []
-        , C.yTicks []
-        , C.xLabels []
-        , C.yLabels []
-        , C.xAxis []
+        [ C.binLabels Tuple.first
+            [ CA.moveDown 20 ]
+        , C.yLabels
+            [ CA.withGrid, CA.ints ]
         , C.yAxis []
-        , C.bars [] [ C.bar identity [] ] [ 2, 4, 3 ]
+        , C.bars [] [ C.bar (Tuple.second >> List.length >> toFloat) [] ] data
         ]
         |> Element.html
-        |> Element.el []
 
 
-groupByGrade : List Route.RouteData -> Dict String (List Route.RouteData)
+type alias ThingWithGrade a =
+    { a | grade : String }
+
+
+groupByGrade : List (ThingWithGrade a) -> Dict String (List (ThingWithGrade a))
 groupByGrade routes =
     let
-        foldHelper = 1
+        addToList : ThingWithGrade a -> Maybe (List (ThingWithGrade a)) -> Maybe (List (ThingWithGrade a))
+        addToList routeData maybeRouteList =
+            case maybeRouteList of
+                Just routeList ->
+                    Just <| routeData :: routeList
+
+                Nothing ->
+                    Just <| [ routeData ]
+
+        foldHelper : ThingWithGrade a -> Dict String (List (ThingWithGrade a)) -> Dict String (List (ThingWithGrade a))
+        foldHelper =
+            \route dict -> dict |> Dict.update route.grade (addToList route)
     in
     routes
         |> List.foldl foldHelper Dict.empty
