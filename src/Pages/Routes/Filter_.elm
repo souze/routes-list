@@ -628,19 +628,7 @@ viewRouteExpandedSolid rd =
 
             Nothing ->
                 Element.text <| "Not climbed"
-
-        -- , Element.text <| "Notes:\n---\n" ++ rd.notes
-        , if rd.notes /= "" then
-            Element.paragraph
-                [ Element.Border.solid
-                , Element.Border.width 2
-                , Element.Border.color (Element.rgb 0.5 0.5 0.5)
-                , Element.padding 7
-                ]
-                [ Element.text <| rd.notes ]
-
-          else
-            Element.none
+        , viewSolidNotes rd.notes
         , if List.isEmpty rd.images then
             Element.none
 
@@ -667,6 +655,25 @@ viewRouteExpandedSolid rd =
             , label = CommonView.actionButtonLabel "Edit"
             }
         ]
+
+
+viewSolidNotes : String -> Element msg
+viewSolidNotes text =
+    if text /= "" then
+        Element.paragraph
+            [ Element.Border.solid
+            , Element.Border.width 2
+            , Element.Border.color (Element.rgb 0.5 0.5 0.5)
+            , Element.padding 7
+            ]
+            (text
+                |> String.lines
+                |> List.map Element.text
+                |> List.intersperse (Element.html (Html.br [] []))
+            )
+
+    else
+        Element.none
 
 
 viewRouteExpandedEdit : RouteData -> DatePickerData -> Element Msg
