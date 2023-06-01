@@ -1,6 +1,7 @@
 module Pages.Home_ exposing (Model, Msg(..), page)
 
 import Gen.Params.Home_ exposing (Params)
+import Gen.Route
 import Page
 import Request
 import Shared
@@ -11,7 +12,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.protected.element
         (\_ ->
-            { init = init
+            { init = init req
             , update = update
             , view = view
             , subscriptions = subscriptions
@@ -27,9 +28,11 @@ type alias Model =
     {}
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( {}, Cmd.none )
+init : Request.With Params -> ( Model, Cmd Msg )
+init req =
+    ( {}
+    , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
+    )
 
 
 
