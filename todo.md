@@ -17,6 +17,7 @@ V2
 * Fix notes beeing squashed
 * Show password checkbox
 * More graphs
+* Sort grades resonably
 * Close date picker when date selected
 * Nicer wrong username/password information
 * Pictures and Videos from link

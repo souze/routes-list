@@ -140,8 +140,56 @@ updateEditRouteField fieldName newValue rd =
         "notes" ->
             { rd | notes = newValue }
 
+        "type" ->
+            case String.toInt newValue of
+                Just index ->
+                    { rd | type_ = indexToType index }
+
+                Nothing ->
+                    rd
+
         _ ->
             rd
+
+
+indexToType : Int -> Route.ClimbType
+indexToType index =
+    case index of
+        0 ->
+            Route.Trad
+
+        1 ->
+            Route.Sport
+
+        2 ->
+            Route.Mix
+
+        3 ->
+            Route.Boulder
+
+        _ ->
+            Route.Trad
+
+
+typeToIndex : Route.ClimbType -> Int
+typeToIndex type_ =
+    case type_ of
+        Route.Trad ->
+            0
+
+        Route.Sport ->
+            1
+
+        Route.Mix ->
+            2
+
+        Route.Boulder ->
+            3
+
+
+typeListStr : List String
+typeListStr =
+    [ "Trad", "Sport", "Mix", "Boulder" ]
 
 
 
@@ -172,29 +220,50 @@ viewNewRoute model =
         [ onelineEdit "name" "Name" model.route.name
         , onelineEdit "area" "Area" model.route.area
         , onelineEdit "grade" "Grade" model.route.grade
-        , DatePicker.input []
-            { onChange = DatePickerUpdate
-            , selected = model.route.tickDate2
-            , text = model.datePickerText
-            , label = Element.Input.labelLeft [] <| Element.text "Tickdate"
-            , placeholder = Just <| Element.Input.placeholder [] <| Element.text "yyyy-MM-dd"
-            , settings = DatePicker.defaultSettings
-            , model = model.datePickerModel
-            }
-        , Element.Input.multiline [ Element.width Element.fill ]
-            { onChange = FieldUpdated "notes"
-            , text = model.route.notes
-            , placeholder = Nothing
-            , label = Element.Input.labelAbove [] (Element.text "Notes")
-            , spellcheck = True
-            }
-        , Element.row [ Element.spacing 10 ]
-            [ Element.Input.button []
-                { onPress = Just <| CreateRoute
-                , label = CommonView.actionButtonLabel "Create"
-                }
-            ]
+        , climbTypeSelect model
+        , tickdatePicker model
+        , notesField model.route.notes
+        , createRouteButton
         ]
+
+
+climbTypeSelect : Model -> Element Msg
+climbTypeSelect model =
+    CommonView.selectOne (String.fromInt >> FieldUpdated "type") typeListStr (typeToIndex model.route.type_)
+
+
+createRouteButton : Element Msg
+createRouteButton =
+    Element.row [ Element.spacing 10 ]
+        [ Element.Input.button []
+            { onPress = Just <| CreateRoute
+            , label = CommonView.actionButtonLabel "Create"
+            }
+        ]
+
+
+notesField : String -> Element Msg
+notesField text =
+    Element.Input.multiline [ Element.width Element.fill ]
+        { onChange = FieldUpdated "notes"
+        , text = text
+        , placeholder = Nothing
+        , label = Element.Input.labelAbove [] (Element.text "Notes")
+        , spellcheck = True
+        }
+
+
+tickdatePicker : Model -> Element Msg
+tickdatePicker model =
+    DatePicker.input []
+        { onChange = DatePickerUpdate
+        , selected = model.route.tickDate2
+        , text = model.datePickerText
+        , label = Element.Input.labelLeft [] <| Element.text "Tickdate"
+        , placeholder = Just <| Element.Input.placeholder [] <| Element.text "yyyy-MM-dd"
+        , settings = DatePicker.defaultSettings
+        , model = model.datePickerModel
+        }
 
 
 expandRouteColumn : List (Element.Element msg) -> Element.Element msg

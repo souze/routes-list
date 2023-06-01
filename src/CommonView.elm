@@ -4,6 +4,10 @@ import Element exposing (Element)
 import Element.Background
 import Element.Input
 import Gen.Route
+import List.Extra
+import Set
+import Widget
+import Widget.Material as Material
 
 
 header : Element msg
@@ -53,3 +57,47 @@ adminPageWithItems items =
         (linkToRoute "Home" Gen.Route.Admin__Home_
             :: items
         )
+
+
+selectOne : (Int -> msg) -> List String -> Int -> Element msg
+selectOne msgFn options selected =
+    selectOneCustom "🟢" msgFn options (Just selected)
+
+
+selectOneCustom : String -> (Int -> msg) -> List String -> Maybe Int -> Element msg
+selectOneCustom selectedIcon msgFn options maybeSelected =
+    { selected = maybeSelected
+    , options =
+        options
+            |> List.indexedMap
+                (\i text ->
+                    { text = text
+                    , icon =
+                        case maybeSelected of
+                            Just selected ->
+                                if i == selected then
+                                    always (Element.text selectedIcon)
+
+                                else
+                                    always Element.none
+
+                            Nothing ->
+                                always Element.none
+                    }
+                )
+    , onSelect = \i -> Just <| msgFn i
+    }
+        |> Widget.select
+        |> Widget.wrappedButtonRow
+            { elementRow = filledButtonRow
+            , content = Material.containedButton Material.defaultPalette
+            }
+
+
+filledButtonRow : Widget.RowStyle msg
+filledButtonRow =
+    let
+        br =
+            Material.buttonRow
+    in
+    { br | elementRow = Element.width Element.fill :: br.elementRow }
