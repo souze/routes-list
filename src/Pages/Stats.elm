@@ -76,18 +76,33 @@ viewBody shared model =
 viewStats : Shared.Model -> Model -> Element Msg
 viewStats shared model =
     Element.column [ Element.padding 15, Element.spacing 10 ]
-        [ Element.text "Routes climbed, by grade"
-        , gradeChart shared.routes
+        [ Element.text "Routes climbed, Trad"
+        , gradeChart (isClimbedAndIsType Route.Trad) shared.routes
+        , Element.text "Routes climbed, Sport"
+        , gradeChart (isClimbedAndIsType Route.Sport) shared.routes
+        , Element.text "Routes climbed, Mix"
+        , gradeChart (isClimbedAndIsType Route.Mix) shared.routes
+        , Element.text "Routes climbed, Boulder"
+        , gradeChart (isClimbedAndIsType Route.Boulder) shared.routes
         ]
 
 
-gradeChart : List RouteData -> Element msg
-gradeChart routes =
+isClimbedAndIsType : Route.ClimbType -> RouteData -> Bool
+isClimbedAndIsType type_ rd =
+    routeIsClimbed rd && rd.type_ == type_
+
+
+routeIsClimbed : RouteData -> Bool
+routeIsClimbed =
+    .tickDate2 >> Maybe.Extra.isJust
+
+
+gradeChart : (RouteData -> Bool) -> List RouteData -> Element msg
+gradeChart pred routes =
     let
         data =
             routes
-                |> List.filter (.tickDate2 >> Maybe.Extra.isJust)
-                -- Only climbed routes
+                |> List.filter pred
                 |> groupByGrade
                 |> Dict.toList
     in

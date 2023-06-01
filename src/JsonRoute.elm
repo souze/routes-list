@@ -47,16 +47,16 @@ climbTypeDecoder =
     Json.Decode.map
         (\s ->
             case s of
-                "trad" ->
+                "Trad" ->
                     Trad
 
-                "sport" ->
+                "Sport" ->
                     Sport
 
-                "mix" ->
+                "Mix" ->
                     Mix
 
-                "boulder" ->
+                "Boulder" ->
                     Boulder
 
                 _ ->

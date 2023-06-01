@@ -12,9 +12,9 @@ V2
 ✅ Get rid of annoying always-back-to-all-filter-view
 ✅ Graphs PoC
 ✅ Create route select type
-🚧 Custom sort/filter
-    - PoC in place, needs some thinking
+✅ Custom sort/filter
 ✅ Fix notes beeing squashed
+* Better sort/filter
 * Show password checkbox
 * Submit on enter
 * More graphs
