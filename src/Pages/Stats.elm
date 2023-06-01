@@ -2,6 +2,8 @@ module Pages.Stats exposing (Model, Msg, groupByGrade, page)
 
 import Chart as C
 import Chart.Attributes as CA
+import Chart.Events as CE
+import Chart.Item as CI
 import CommonView
 import Dict exposing (Dict)
 import Element exposing (Element)
@@ -105,6 +107,8 @@ gradeChart pred routes =
                 |> List.filter pred
                 |> groupByGrade
                 |> Dict.toList
+                |> List.sortBy Tuple.first
+                |> List.sortBy (Tuple.first >> Route.gradeCompare)
     in
     C.chart
         [ CA.width 300
@@ -122,6 +126,7 @@ gradeChart pred routes =
             [ CA.withGrid, CA.ints ]
         , C.yAxis []
         , C.bars [] [ C.bar (Tuple.second >> List.length >> toFloat) [] ] data
+        , C.barLabels [ CA.moveDown 12, CA.color "white", CA.rotate 0, CA.moveRight 0, CA.alignMiddle, CA.fontSize 12 ]
         ]
         |> Element.html
 

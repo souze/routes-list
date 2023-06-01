@@ -1,6 +1,7 @@
 module Route exposing (..)
 
 import Date
+import List.Extra
 import Time
 
 
@@ -118,3 +119,35 @@ commonToExistingRoute id common =
 firstId : RouteId
 firstId =
     RouteId 90
+
+
+gradeCompare : String -> Int
+gradeCompare grade =
+    List.Extra.elemIndex grade gradeOrder
+        |> Maybe.withDefault 0
+
+
+gradeOrder : List String
+gradeOrder =
+    [ "3-"
+    , "3"
+    , "3+"
+    , "4-"
+    , "4"
+    , "4+"
+    , "5-"
+    , "5"
+    , "5+"
+    , "6-"
+    , "6"
+    , "6+"
+    , "7-"
+    , "7"
+    , "7+"
+    , "8-"
+    , "8"
+    , "8+"
+    , "9-"
+    , "9"
+    , "9+"
+    ]
