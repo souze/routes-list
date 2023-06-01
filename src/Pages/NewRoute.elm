@@ -8,9 +8,10 @@ import Element exposing (Element)
 import Element.Background
 import Element.Input
 import Gen.Params.NewRoute exposing (Params)
+import Gen.Route
 import Lamdera
 import Page
-import Request
+import Request exposing (Request)
 import Route exposing (CommonRouteData, NewRouteData, RouteData)
 import Shared
 import View exposing (View)
@@ -21,7 +22,7 @@ page shared req =
     Page.protected.element
         (\_ ->
             { init = init shared
-            , update = update
+            , update = update req
             , view = view
             , subscriptions = \_ -> Sub.none
             }
@@ -59,8 +60,8 @@ type Msg
     | CreateRoute
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Request -> Msg -> Model -> ( Model, Cmd Msg )
+update req msg model =
     case msg of
         FieldUpdated fieldName newValue ->
             ( { model | route = model.route |> updateEditRouteField fieldName newValue }
@@ -74,7 +75,12 @@ update msg model =
 
         CreateRoute ->
             ( model
-            , Lamdera.sendToBackend <| Bridge.ToBackendCreateNewRoute model.route
+            , Cmd.batch
+                [ Lamdera.sendToBackend <| Bridge.ToBackendCreateNewRoute model.route
+                , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
+
+                -- Todo, maybe go to wishlist if the route is not climbed, and log if it is
+                ]
             )
 
 
