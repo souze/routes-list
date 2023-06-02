@@ -14,10 +14,13 @@ V2
 ✅ Create route select type
 ✅ Custom sort/filter
 ✅ Fix notes beeing squashed
+✅ More graphs
+* Add aid ClimbType
+* Change type of a climb
+    - Should reuse the same view for edit/new
 * Better sort/filter
 * Show password checkbox
 * Submit on enter
-* More graphs
 * Sort grades resonably
 * Close date picker when date selected
 * Nicer wrong username/password information
