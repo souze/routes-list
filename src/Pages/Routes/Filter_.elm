@@ -22,9 +22,11 @@ import Maybe.Extra
 import Page
 import Request
 import Route exposing (..)
+import RouteEditPane
 import Set exposing (Set)
 import Shared
 import Sorter
+import Time
 import View exposing (View)
 
 
@@ -65,23 +67,15 @@ type alias DatePickerData =
 
 type alias Metadata =
     { expanded : Bool
-    , datePickerData : DatePickerData
-    , editRoute : Maybe RouteData
+    , routeId : RouteId
+    , editRoute : Maybe RouteEditPane.Model
     }
 
 
-initialMetadata : Metadata
-initialMetadata =
+initialMetadata : RouteId -> Metadata
+initialMetadata routeId =
     { expanded = False
-    , datePickerData = { dateText = "", pickerModel = DatePicker.init }
-    , editRoute = Nothing
-    }
-
-
-initialMetadataToday : Date -> Metadata
-initialMetadataToday today =
-    { expanded = False
-    , datePickerData = { dateText = "", pickerModel = DatePicker.initWithToday today }
+    , routeId = routeId
     , editRoute = Nothing
     }
 
@@ -89,6 +83,7 @@ initialMetadataToday today =
 type alias Model =
     { filter : Filter
     , showSortBox : Bool
+    , currentDate : Date
     , metadatas : Dict Int Metadata
     }
 
@@ -115,6 +110,7 @@ init req shared =
         Just filter_ ->
             ( { filter = filter_
               , showSortBox = False
+              , currentDate = initialDate
               , metadatas = Dict.empty
               }
             , Cmd.none
@@ -123,37 +119,21 @@ init req shared =
         Nothing ->
             ( { filter = { filter = initialAllFilter, sorter = Sorter.initialModel }
               , showSortBox = False
+              , currentDate = initialDate
               , metadatas = Dict.empty
               }
             , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
             )
 
 
+initialDate : Date
+initialDate =
+    Date.fromCalendarDate 2023 Time.Jan 1
+
+
 initialAllFilter : Filter.Model
 initialAllFilter =
     Filter.initialModel
-
-
-toFrontendRowData : Date -> Dict Int Metadata -> List RouteData -> List RowData
-toFrontendRowData today metadatas routes =
-    routes
-        |> List.map
-            (\route ->
-                let
-                    md : Metadata
-                    md =
-                        metadatas
-                            |> Dict.get (getIntId route.id)
-                            |> Maybe.withDefault (initialMetadataToday today)
-                in
-                { expanded = md.expanded
-                , datePickerData = md.datePickerData
-                , route =
-                    { realRoute = route
-                    , editRoute = md.editRoute
-                    }
-                }
-            )
 
 
 
@@ -167,11 +147,17 @@ type Msg
     | DatePickerUpdate RouteId DatePicker.ChangeEvent
     | SortSelected Sorter.SorterMsg
     | FilterMsg Filter.Msg
+    | RouteEditPaneMsg RouteId RouteEditPane.Msg
 
 
 update : Shared.Model -> Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
 update shared req msg model =
     case msg of
+        RouteEditPaneMsg rid editPaneMsg ->
+            ( { model | metadatas = model.metadatas |> updateRouteEditPane rid editPaneMsg }
+            , Cmd.none
+            )
+
         ToggleFilters ->
             ( { model | showSortBox = not model.showSortBox }
             , Cmd.none
@@ -181,12 +167,12 @@ update shared req msg model =
             buttonPressed id req shared.currentDate model
 
         FieldUpdated routeId fieldName newValue ->
-            ( fieldUpdated routeId fieldName newValue model
+            ( model
             , Cmd.none
             )
 
         DatePickerUpdate routeId updateEvent ->
-            ( updateDatePicker routeId updateEvent model
+            ( model
             , Cmd.none
             )
 
@@ -198,6 +184,20 @@ update shared req msg model =
         FilterMsg filterMsg ->
             ( { model | filter = model.filter |> updateFilter (uniqueGrades shared.routes) filterMsg }
             , Cmd.none
+            )
+
+
+updateRouteEditPane : RouteId -> RouteEditPane.Msg -> Dict Int Metadata -> Dict Int Metadata
+updateRouteEditPane rid msg metadatas =
+    metadatas
+        |> mapRouteIdMetadata rid
+            (\md ->
+                case md.editRoute of
+                    Just route ->
+                        { md | editRoute = Just (route |> RouteEditPane.update msg) }
+
+                    Nothing ->
+                        md
             )
 
 
@@ -217,111 +217,12 @@ updateSorter msg filter =
     }
 
 
-updateDatePicker : RouteId -> DatePicker.ChangeEvent -> Model -> Model
-updateDatePicker routeId changeEvent model =
-    { model
-        | metadatas =
-            model.metadatas
-                |> mapRouteIdMetadata routeId (updateDateTickerInRow changeEvent)
-    }
-
-
 mapRouteIdMetadata : RouteId -> (Metadata -> Metadata) -> Dict Int Metadata -> Dict Int Metadata
 mapRouteIdMetadata (RouteId id) f metadatas =
     Dict.get id metadatas
-        |> Maybe.withDefault initialMetadata
+        |> Maybe.withDefault (initialMetadata (RouteId id))
         |> f
         |> (\md -> Dict.insert id md metadatas)
-
-
-mapRouteIdMetadataToday : Date -> RouteId -> (Metadata -> Metadata) -> Dict Int Metadata -> Dict Int Metadata
-mapRouteIdMetadataToday today (RouteId id) f metadatas =
-    Dict.get id metadatas
-        |> Maybe.withDefault (initialMetadataToday today)
-        |> f
-        |> (\md -> Dict.insert id md metadatas)
-
-
-mapRouteIdMetadataEditRoute : RouteId -> (RouteData -> RouteData) -> Dict Int Metadata -> Dict Int Metadata
-mapRouteIdMetadataEditRoute id f =
-    mapRouteIdMetadata id (\md -> { md | editRoute = md.editRoute |> Maybe.map f })
-
-
-
--- { model | rows = mapRowWithRouteId (RouteId id) (updateDateTickerInRow changeEvent) model.rows }
-
-
-updateDateTickerInRow : DatePicker.ChangeEvent -> Metadata -> Metadata
-updateDateTickerInRow changeEvent metadata =
-    let
-        editRoute : Maybe RouteData
-        editRoute =
-            metadata.editRoute
-
-        ( newDate, newDpd ) =
-            updateDatePickerData
-                changeEvent
-                (metadata.editRoute |> Maybe.map .tickDate2 |> Maybe.Extra.join)
-                metadata.datePickerData
-    in
-    { metadata
-        | datePickerData = newDpd
-        , editRoute = editRoute |> Maybe.map (\r -> { r | tickDate2 = newDate })
-    }
-
-
-updateDatePickerData : DatePicker.ChangeEvent -> Maybe Date -> DatePickerData -> ( Maybe Date, DatePickerData )
-updateDatePickerData changeEvent currentDatePicked dpd =
-    case changeEvent of
-        DatePicker.DateChanged date ->
-            ( Just date
-            , { dpd
-                | dateText = Date.toIsoString date
-              }
-            )
-
-        DatePicker.TextChanged text ->
-            ( Date.fromIsoString text
-                |> Result.toMaybe
-            , { dpd | dateText = text }
-            )
-
-        DatePicker.PickerChanged subMsg ->
-            ( currentDatePicked
-            , { dpd
-                | pickerModel =
-                    dpd.pickerModel
-                        |> DatePicker.update subMsg
-              }
-            )
-
-
-fieldUpdated : RouteId -> String -> String -> Model -> Model
-fieldUpdated routeId fieldName newValue model =
-    { model
-        | metadatas =
-            model.metadatas
-                |> mapRouteIdMetadataEditRoute routeId (updateEditRouteField fieldName newValue)
-    }
-
-
-updateEditRouteField : String -> String -> CommonRouteData a -> CommonRouteData a
-updateEditRouteField fieldName newValue rd =
-    case fieldName of
-        "name" ->
-            { rd | name = newValue }
-
-        "grade" ->
-            { rd | grade = newValue }
-
-        "area" ->
-            { rd | area = newValue }
-
-        "notes" ->
-            { rd | notes = newValue }
-
-        _ ->
-            rd
 
 
 type ButtonId
@@ -342,7 +243,7 @@ buttonPressed id req today model =
             )
 
         EditRouteButton route ->
-            ( enableEdit route model
+            ( enableEdit model.currentDate route model
             , Cmd.none
             )
 
@@ -376,12 +277,22 @@ discardChanges id m =
     }
 
 
-enableEdit : RouteData -> Model -> Model
-enableEdit rd m =
+enableEdit : Date -> RouteData -> Model -> Model
+enableEdit currentDate rd m =
     { m
         | metadatas =
             m.metadatas
-                |> mapRouteIdMetadata rd.id (\md -> { md | editRoute = Just rd })
+                |> mapRouteIdMetadata rd.id
+                    (\md ->
+                        { md
+                            | editRoute =
+                                Just
+                                    (RouteEditPane.init
+                                        currentDate
+                                        (Route.newRouteDataFromExisting rd)
+                                    )
+                        }
+                    )
     }
 
 
@@ -390,7 +301,7 @@ toggleExpansionRouteId id today m =
     { m
         | metadatas =
             m.metadatas
-                |> mapRouteIdMetadataToday today id (\md -> { md | expanded = not md.expanded })
+                |> mapRouteIdMetadata id (\md -> { md | expanded = not md.expanded })
     }
 
 
@@ -452,12 +363,33 @@ uniqueGrades routes =
 viewRouteList : Shared.Model -> Model -> List (Element Msg)
 viewRouteList shared model =
     shared.routes
-        |> toFrontendRowData shared.currentDate model.metadatas
         |> filterAndSortView model.filter
+        -- List RouteData
+        -- |> toFrontendRowData shared.currentDate model.metadatas
+        |> withMetadata model.metadatas
+        -- List (Metadata, RouteData)
         |> List.map viewRoute
 
 
-filterAndSortView : Filter -> List RowData -> List RowData
+getMetadata : RouteId -> Dict Int Metadata -> Maybe Metadata
+getMetadata (RouteId id) metadatas =
+    metadatas |> Dict.get id
+
+
+withMetadata : Dict Int Metadata -> List RouteData -> List ( Metadata, RouteData )
+withMetadata metadatas routes =
+    routes
+        |> List.map
+            (\r ->
+                ( metadatas
+                    |> getMetadata r.id
+                    |> Maybe.withDefault (initialMetadata r.id)
+                , r
+                )
+            )
+
+
+filterAndSortView : Filter -> List RouteData -> List RouteData
 filterAndSortView filter rows =
     let
         ( filterF, sorterF ) =
@@ -468,14 +400,14 @@ filterAndSortView filter rows =
         |> sorterF
 
 
-filterAndSorter : Filter -> ( RowData -> Bool, List RowData -> List RowData )
+filterAndSorter : Filter -> ( RouteData -> Bool, List RouteData -> List RouteData )
 filterAndSorter { filter, sorter } =
     ( applyCustomFilter filter
     , applyCustomSorter sorter
     )
 
 
-applyCustomSorter : Sorter.Model -> (List RowData -> List RowData)
+applyCustomSorter : Sorter.Model -> (List RouteData -> List RouteData)
 applyCustomSorter sortAttributes =
     case List.head sortAttributes of
         Nothing ->
@@ -485,14 +417,14 @@ applyCustomSorter sortAttributes =
             \l -> sortByAttr attr order l
 
 
-sortByAttr : Sorter.SortAttribute -> Sorter.SortOrder -> List RowData -> List RowData
+sortByAttr : Sorter.SortAttribute -> Sorter.SortOrder -> List RouteData -> List RouteData
 sortByAttr attr order l =
     l
         |> sortByAttr2 attr
         |> maybeReverse order
 
 
-sortByAttr2 : Sorter.SortAttribute -> List RowData -> List RowData
+sortByAttr2 : Sorter.SortAttribute -> List RouteData -> List RouteData
 sortByAttr2 attr =
     case attr of
         Sorter.Tickdate ->
@@ -502,17 +434,17 @@ sortByAttr2 attr =
             List.sortBy (getComparableAttr attr)
 
 
-getComparableAttr : Sorter.SortAttribute -> RowData -> String
+getComparableAttr : Sorter.SortAttribute -> RouteData -> String
 getComparableAttr attr rd =
     case attr of
         Sorter.Name ->
-            rd.route.realRoute.name
+            rd.name
 
         Sorter.Grade ->
-            rd.route.realRoute.grade
+            rd.grade
 
         Sorter.Area ->
-            rd.route.realRoute.area
+            rd.area
 
         _ ->
             ""
@@ -528,14 +460,14 @@ maybeReverse order =
             List.reverse
 
 
-applyCustomFilter : Filter.Model -> (RowData -> Bool)
+applyCustomFilter : Filter.Model -> (RouteData -> Bool)
 applyCustomFilter filter =
     \rd ->
         filterGrade filter.grade rd
             && filterTickdate filter.tickdate rd
 
 
-filterTickdate : Filter.TickDateFilter -> (RowData -> Bool)
+filterTickdate : Filter.TickDateFilter -> (RouteData -> Bool)
 filterTickdate filter =
     case filter of
         Filter.TickdateRangeFrom ->
@@ -557,23 +489,23 @@ filterTickdate filter =
             \_ -> True
 
 
-hasTickDate : RowData -> Bool
+hasTickDate : RouteData -> Bool
 hasTickDate rd =
-    rd.route.realRoute.tickDate2 |> Maybe.Extra.isJust
+    rd.tickDate2 |> Maybe.Extra.isJust
 
 
-filterGrade : Set String -> (RowData -> Bool)
+filterGrade : Set String -> (RouteData -> Bool)
 filterGrade filter =
     if Set.isEmpty filter then
         \_ -> True
 
     else
-        \rd -> Set.member rd.route.realRoute.grade filter
+        \rd -> Set.member rd.grade filter
 
 
-tickdateSorter : RowData -> RowData -> Order
+tickdateSorter : RouteData -> RouteData -> Order
 tickdateSorter rd1 rd2 =
-    case ( rd1.route.realRoute.tickDate2, rd2.route.realRoute.tickDate2 ) of
+    case ( rd1.tickDate2, rd2.tickDate2 ) of
         ( Just a, Just b ) ->
             Date.compare a b
 
@@ -587,22 +519,22 @@ tickdateSorter rd1 rd2 =
             LT
 
 
-viewRoute : RowData -> Element Msg
-viewRoute rd =
+viewRoute : ( Metadata, RouteData ) -> Element Msg
+viewRoute ( meta, rd ) =
     Element.column [ Element.spacing 5, Element.width Element.fill ]
-        ([ viewRouteOneline rd.route ]
-            |> listAppendIf rd.expanded (viewRouteExpanded rd.route rd.datePickerData)
+        ([ viewRouteOneline rd ]
+            |> listAppendIf meta.expanded (viewRouteExpanded rd meta.editRoute)
         )
 
 
-viewRouteExpanded : RouteDataEdit -> DatePickerData -> Element.Element Msg
-viewRouteExpanded routeDataEdit datePickerData =
-    case routeDataEdit.editRoute of
-        Just editRoute ->
-            viewRouteExpandedEdit editRoute datePickerData
+viewRouteExpanded : RouteData -> Maybe RouteEditPane.Model -> Element Msg
+viewRouteExpanded realRoute routeEditModel =
+    case routeEditModel of
+        Just editModel ->
+            viewRouteExpandedEdit realRoute.id editModel
 
         Nothing ->
-            viewRouteExpandedSolid routeDataEdit.realRoute
+            viewRouteExpandedSolid realRoute
 
 
 expandRouteColumn : List (Element.Element msg) -> Element.Element msg
@@ -676,9 +608,9 @@ viewSolidNotes text =
         Element.none
 
 
-viewRouteExpandedEdit : RouteData -> DatePickerData -> Element Msg
-viewRouteExpandedEdit rd datePickerData =
-    viewExistingOrNewRouteExpanded rd.id rd datePickerData
+viewRouteExpandedEdit : RouteId -> RouteEditPane.Model -> Element Msg
+viewRouteExpandedEdit rid editModel =
+    viewExistingOrNewRouteExpanded rid editModel
 
 
 listAppendIf : Bool -> a -> List a -> List a
@@ -690,12 +622,8 @@ listAppendIf pred item list =
         list
 
 
-viewRouteOneline : RouteDataEdit -> Element.Element Msg
-viewRouteOneline { realRoute } =
-    let
-        rd =
-            realRoute
-    in
+viewRouteOneline : RouteData -> Element.Element Msg
+viewRouteOneline rd =
     Element.Input.button
         [ Element.width Element.fill ]
         { onPress = Just <| ButtonPressed (ExpandRouteButton rd.id)
@@ -726,52 +654,13 @@ viewRouteOneline { realRoute } =
         }
 
 
-viewExistingOrNewRouteExpanded : RouteId -> CommonRouteData a -> DatePickerData -> Element.Element Msg
-viewExistingOrNewRouteExpanded routeId rd datePickerData =
-    let
-        onelineEdit : String -> String -> String -> Element.Element Msg
-        onelineEdit name prettyName value =
-            Element.Input.text []
-                { onChange = FieldUpdated routeId name
-                , text = value
-                , placeholder = Nothing
-                , label = Element.Input.labelLeft [] (Element.text prettyName)
-                }
-    in
+viewExistingOrNewRouteExpanded : RouteId -> RouteEditPane.Model -> Element.Element Msg
+viewExistingOrNewRouteExpanded routeId editModel =
     expandRouteColumn
-        [ onelineEdit "name" "Name" rd.name
-        , onelineEdit "area" "Area" rd.area
-        , onelineEdit "grade" "Grade" rd.grade
-        , DatePicker.input []
-            { onChange = DatePickerUpdate routeId
-            , selected = rd.tickDate2
-            , text = datePickerData.dateText
-            , label = Element.Input.labelLeft [] <| Element.text "Tickdate"
-            , placeholder = Just <| Element.Input.placeholder [] <| Element.text "yyyy-MM-dd"
-            , settings = DatePicker.defaultSettings
-            , model = datePickerData.pickerModel
-            }
-        , Element.Input.multiline [ Element.width Element.fill ]
-            { onChange = FieldUpdated routeId "notes"
-            , text = rd.notes
-            , placeholder = Nothing
-            , label = Element.Input.labelAbove [] (Element.text "Notes")
-            , spellcheck = True
-            }
+        [ RouteEditPane.view editModel |> Element.map (RouteEditPaneMsg routeId)
         , Element.row [ Element.spacing 10 ]
-            [ CommonView.buttonToSendEvent "Save" <| ButtonPressed <| SaveButton (commonToExistingRoute routeId rd)
+            [ CommonView.buttonToSendEvent "Save" <| ButtonPressed <| SaveButton (commonToExistingRoute routeId editModel.route)
             , CommonView.buttonToSendEvent "Discard" <| ButtonPressed <| DiscardButton routeId
             , CommonView.buttonToSendEvent "Remove" <| ButtonPressed <| RemoveButton routeId
-
-            -- (MsgGoToPage
-            --     (ConfirmPage
-            --         { text = ""
-            --         , label = "Are you sure you want to remove the route \"" ++ rd.name ++ "\"?"
-            --         , code = "remove"
-            --         , event = RemoveRoute routeId
-            --         , abortPage = RoutePage ViewAll
-            --         }
-            --     )
-            -- )
             ]
         ]

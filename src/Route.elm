@@ -25,7 +25,9 @@ type RouteIdOrNew
 
 
 type alias RouteDataEdit =
-    { realRoute : RouteData, editRoute : Maybe RouteData }
+    { realRoute : RouteData
+    , editRoute : Maybe RouteData
+    }
 
 
 type alias RouteData =
@@ -38,6 +40,19 @@ type alias RouteData =
     , images : List String
     , videos : List String
     , id : RouteId
+    }
+
+
+newRouteDataFromExisting : RouteData -> NewRouteData
+newRouteDataFromExisting r =
+    { name = r.name
+    , area = r.area
+    , grade = r.grade
+    , notes = r.notes
+    , tickDate2 = r.tickDate2
+    , type_ = r.type_
+    , images = r.images
+    , videos = r.videos
     }
 
 
