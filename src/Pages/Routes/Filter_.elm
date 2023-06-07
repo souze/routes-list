@@ -5,7 +5,6 @@ import CommonView
 import Date exposing (Date)
 import DatePicker
 import Dict exposing (Dict)
-import Effect
 import Element exposing (Element)
 import Element.Background
 import Element.Border
@@ -33,7 +32,7 @@ import View exposing (View)
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.protected.element
-        (\user ->
+        (\_ ->
             { init = init req shared
             , update = update shared req
             , view = view shared
@@ -49,13 +48,6 @@ page shared req =
 type alias Filter =
     { filter : Filter.Model
     , sorter : Sorter.Model
-    }
-
-
-type alias RowData =
-    { expanded : Bool
-    , datePickerData : DatePickerData
-    , route : RouteDataEdit
     }
 
 
@@ -89,7 +81,7 @@ type alias Model =
 
 
 init : Request.With Params -> Shared.Model -> ( Model, Cmd Msg )
-init req shared =
+init req _ =
     let
         filter : Maybe Filter
         filter =
@@ -143,8 +135,6 @@ initialAllFilter =
 type Msg
     = ToggleFilters
     | ButtonPressed ButtonId
-    | FieldUpdated RouteId String String
-    | DatePickerUpdate RouteId DatePicker.ChangeEvent
     | SortSelected Sorter.SorterMsg
     | FilterMsg Filter.Msg
     | RouteEditPaneMsg RouteId RouteEditPane.Msg
@@ -165,16 +155,6 @@ update shared req msg model =
 
         ButtonPressed id ->
             buttonPressed id req shared.currentDate model
-
-        FieldUpdated routeId fieldName newValue ->
-            ( model
-            , Cmd.none
-            )
-
-        DatePickerUpdate routeId updateEvent ->
-            ( model
-            , Cmd.none
-            )
 
         SortSelected sorterMsg ->
             ( { model | filter = model.filter |> updateSorter sorterMsg }
