@@ -20,7 +20,9 @@ V2
 ✅ Sort grades resonably
 * Add aid ClimbType
 * Better sort/filter
-    - Filter type
+    ✅ Filter type
+    - Sort grades properly
+    - Show number of filtered routes
 * Show password checkbox
 * Submit on enter
 * Close date picker when date selected

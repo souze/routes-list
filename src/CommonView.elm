@@ -5,7 +5,8 @@ import Element.Background
 import Element.Input
 import Gen.Route
 import List.Extra
-import Set
+import Route
+import Set exposing (Set)
 import Widget
 import Widget.Material as Material
 
@@ -101,3 +102,30 @@ filledButtonRow =
             Material.buttonRow
     in
     { br | elementRow = Element.width Element.fill :: br.elementRow }
+
+
+selectMany : Set String -> List String -> Element String
+selectMany selected options =
+    { selected =
+        selected
+            |> Set.map
+                (\selectedItem ->
+                    options
+                        |> List.Extra.elemIndex selectedItem
+                        |> Maybe.withDefault 0
+                )
+    , options =
+        options
+            |> List.map
+                (\item ->
+                    { text = item
+                    , icon = always Element.none
+                    }
+                )
+    , onSelect = \i -> Just <| (List.Extra.getAt i options |> Maybe.withDefault "")
+    }
+        |> Widget.multiSelect
+        |> Widget.wrappedButtonRow
+            { elementRow = filledButtonRow
+            , content = Material.containedButton Material.defaultPalette
+            }

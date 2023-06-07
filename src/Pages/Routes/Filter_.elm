@@ -380,7 +380,7 @@ filterAndSortView filter rows =
 
 filterAndSorter : Filter -> ( RouteData -> Bool, List RouteData -> List RouteData )
 filterAndSorter { filter, sorter } =
-    ( applyCustomFilter filter
+    ( Filter.applyCustomFilter filter
     , applyCustomSorter sorter
     )
 
@@ -436,49 +436,6 @@ maybeReverse order =
 
         Sorter.Descending ->
             List.reverse
-
-
-applyCustomFilter : Filter.Model -> (RouteData -> Bool)
-applyCustomFilter filter =
-    \rd ->
-        filterGrade filter.grade rd
-            && filterTickdate filter.tickdate rd
-
-
-filterTickdate : Filter.TickDateFilter -> (RouteData -> Bool)
-filterTickdate filter =
-    case filter of
-        Filter.TickdateRangeFrom ->
-            \_ -> True
-
-        Filter.TickdateRangeTo ->
-            \_ -> True
-
-        Filter.TickdateRangeBetween ->
-            \_ -> True
-
-        Filter.ShowHasTickdate ->
-            hasTickDate
-
-        Filter.ShowWithoutTickdate ->
-            hasTickDate >> not
-
-        Filter.ShowAllTickdates ->
-            \_ -> True
-
-
-hasTickDate : RouteData -> Bool
-hasTickDate rd =
-    rd.tickDate2 |> Maybe.Extra.isJust
-
-
-filterGrade : Set String -> (RouteData -> Bool)
-filterGrade filter =
-    if Set.isEmpty filter then
-        \_ -> True
-
-    else
-        \rd -> Set.member rd.grade filter
 
 
 tickdateSorter : RouteData -> RouteData -> Order

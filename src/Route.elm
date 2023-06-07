@@ -101,6 +101,12 @@ type ClimbType
     | Mix
 
 
+climbTypeListStr : List String
+climbTypeListStr =
+    [ Trad, Mix, Sport, Boulder ]
+        |> List.map climbTypeToString
+
+
 climbTypeToString : ClimbType -> String
 climbTypeToString ct =
     case ct of
