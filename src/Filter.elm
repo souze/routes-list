@@ -86,12 +86,11 @@ rotateTickdateFilter filter =
 -- Filtering
 
 
-applyCustomFilter : Model -> (RouteData -> Bool)
-applyCustomFilter filter =
-    \rd ->
-        filterGrade filter.grade rd
-            && filterTickdate filter.tickdate rd
-            && filterType filter.type_ rd
+applyCustomFilter : Model -> RouteData -> Bool
+applyCustomFilter filter rd =
+    filterGrade filter.grade rd
+        && filterTickdate filter.tickdate rd
+        && filterType filter.type_ rd
 
 
 filterType : Set String -> RouteData -> Bool
@@ -104,25 +103,25 @@ filterType filter rd =
 
 
 filterTickdate : TickDateFilter -> RouteData -> Bool
-filterTickdate filter =
+filterTickdate filter rd =
     case filter of
         TickdateRangeFrom ->
-            \_ -> True
+            True
 
         TickdateRangeTo ->
-            \_ -> True
+            True
 
         TickdateRangeBetween ->
-            \_ -> True
+            True
 
         ShowHasTickdate ->
-            hasTickDate
+            hasTickDate rd
 
         ShowWithoutTickdate ->
-            hasTickDate >> not
+            hasTickDate rd |> not
 
         ShowAllTickdates ->
-            \_ -> True
+            True
 
 
 hasTickDate : RouteData -> Bool
@@ -131,12 +130,12 @@ hasTickDate rd =
 
 
 filterGrade : Set String -> RouteData -> Bool
-filterGrade filter =
+filterGrade filter rd =
     if Set.isEmpty filter then
-        \_ -> True
+        True
 
     else
-        \rd -> Set.member rd.grade filter
+        Set.member rd.grade filter
 
 
 

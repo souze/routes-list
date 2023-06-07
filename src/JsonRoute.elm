@@ -45,23 +45,7 @@ decodeTickdateString =
 climbTypeDecoder : Json.Decode.Decoder ClimbType
 climbTypeDecoder =
     Json.Decode.map
-        (\s ->
-            case s of
-                "Trad" ->
-                    Trad
-
-                "Sport" ->
-                    Sport
-
-                "Mix" ->
-                    Mix
-
-                "Boulder" ->
-                    Boulder
-
-                _ ->
-                    Trad
-        )
+        Route.stringToClimbType
         Json.Decode.string
 
 

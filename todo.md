@@ -18,7 +18,7 @@ V2
 ✅ Change type of a climb
         - Should reuse the same view for edit/new
 ✅ Sort grades resonably
-* Add aid ClimbType
+✅ Add aid ClimbType
 * Better sort/filter
     ✅ Filter type
     - Sort grades properly

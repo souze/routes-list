@@ -99,11 +99,12 @@ type ClimbType
     | Sport
     | Boulder
     | Mix
+    | Aid
 
 
 climbTypeListStr : List String
 climbTypeListStr =
-    [ Trad, Mix, Sport, Boulder ]
+    [ Trad, Mix, Sport, Boulder, Aid ]
         |> List.map climbTypeToString
 
 
@@ -121,6 +122,31 @@ climbTypeToString ct =
 
         Boulder ->
             "Boulder"
+
+        Aid ->
+            "Aid"
+
+
+stringToClimbType : String -> ClimbType
+stringToClimbType s =
+    case s of
+        "Trad" ->
+            Trad
+
+        "Sport" ->
+            Sport
+
+        "Mix" ->
+            Mix
+
+        "Boulder" ->
+            Boulder
+
+        "Aid" ->
+            Aid
+
+        _ ->
+            Trad
 
 
 commonToExistingRoute : RouteId -> CommonRouteData a -> RouteData

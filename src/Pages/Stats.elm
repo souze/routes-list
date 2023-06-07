@@ -86,6 +86,8 @@ viewStats shared model =
         , gradeChart (isClimbedAndIsType Route.Mix) shared.routes
         , Element.text "Routes climbed, Boulder"
         , gradeChart (isClimbedAndIsType Route.Boulder) shared.routes
+        , Element.text "Routes climbed, Aid"
+        , gradeChart (isClimbedAndIsType Route.Aid) shared.routes
         ]
 
 

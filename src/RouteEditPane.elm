@@ -132,6 +132,9 @@ indexToType index =
         3 ->
             Route.Boulder
 
+        4 ->
+            Route.Aid
+
         _ ->
             Route.Trad
 
@@ -151,10 +154,13 @@ typeToIndex type_ =
         Route.Boulder ->
             3
 
+        Route.Aid ->
+            4
+
 
 typeListStr : List String
 typeListStr =
-    [ "Trad", "Sport", "Mix", "Boulder" ]
+    [ "Trad", "Sport", "Mix", "Boulder", "Aid" ]
 
 
 
