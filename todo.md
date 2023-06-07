@@ -15,13 +15,14 @@ V2
 ✅ Custom sort/filter
 ✅ Fix notes beeing squashed
 ✅ More graphs
+✅ Change type of a climb
+        - Should reuse the same view for edit/new
+✅ Sort grades resonably
 * Add aid ClimbType
-* Change type of a climb
-    - Should reuse the same view for edit/new
 * Better sort/filter
+    - Filter type
 * Show password checkbox
 * Submit on enter
-* Sort grades resonably
 * Close date picker when date selected
 * Nicer wrong username/password information
 * Pictures and Videos from link
