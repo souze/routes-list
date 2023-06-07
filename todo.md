@@ -21,7 +21,7 @@ V2
 ✅ Add aid ClimbType
 * Better sort/filter
     ✅ Filter type
-    - Sort grades properly
+    ✅ Sort grades properly
     - Show number of filtered routes
 * Show password checkbox
 * Submit on enter

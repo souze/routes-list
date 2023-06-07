@@ -1,9 +1,10 @@
 module Sorter exposing (..)
 
+import Date
 import Element exposing (Element)
 import Element.Input
 import List
-import List.Extra
+import Route exposing (RouteData)
 import Widget
 import Widget.Material as Material
 
@@ -86,6 +87,91 @@ clickedRow col ( attr, order ) =
     else
         -- Clicked on new Attr
         ( indexToAttr col, Ascending )
+
+
+
+-- Sorting
+
+
+applyCustomSorter : Model -> (List RouteData -> List RouteData)
+applyCustomSorter sortAttributes =
+    case List.head sortAttributes of
+        Nothing ->
+            identity
+
+        Just ( attr, order ) ->
+            \l -> sortByAttr attr order l
+
+
+sortByAttr : SortAttribute -> SortOrder -> List RouteData -> List RouteData
+sortByAttr attr order l =
+    l
+        |> sortByAttr2 attr
+        |> maybeReverse order
+
+
+sortByAttr2 : SortAttribute -> List RouteData -> List RouteData
+sortByAttr2 attr =
+    case attr of
+        Tickdate ->
+            List.sortWith tickdateSorter
+
+        Grade ->
+            List.sortWith gradeSorter
+
+        _ ->
+            List.sortBy (getComparableAttr attr)
+
+
+gradeSorter : RouteData -> RouteData -> Order
+gradeSorter a b =
+    Route.gradeSorter a.grade b.grade
+
+
+getComparableAttr : SortAttribute -> RouteData -> String
+getComparableAttr attr rd =
+    case attr of
+        Name ->
+            rd.name
+
+        Grade ->
+            rd.grade
+
+        Area ->
+            rd.area
+
+        _ ->
+            ""
+
+
+maybeReverse : SortOrder -> List a -> List a
+maybeReverse order =
+    case order of
+        Ascending ->
+            identity
+
+        Descending ->
+            List.reverse
+
+
+tickdateSorter : RouteData -> RouteData -> Order
+tickdateSorter rd1 rd2 =
+    case ( rd1.tickDate2, rd2.tickDate2 ) of
+        ( Just a, Just b ) ->
+            Date.compare a b
+
+        ( Just _, Nothing ) ->
+            GT
+
+        ( Nothing, Just _ ) ->
+            LT
+
+        _ ->
+            LT
+
+
+
+-- View
 
 
 sortOptions : (SorterMsg -> msg) -> Model -> Element msg
@@ -203,9 +289,11 @@ select msgFn row selected =
             , content = Material.containedButton Material.defaultPalette
             }
 
+
 filledButtonRow : Widget.RowStyle msg
 filledButtonRow =
     let
-        br = Material.buttonRow
+        br =
+            Material.buttonRow
     in
     { br | elementRow = Element.width Element.fill :: br.elementRow }

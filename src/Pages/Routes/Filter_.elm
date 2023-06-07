@@ -381,77 +381,8 @@ filterAndSortView filter rows =
 filterAndSorter : Filter -> ( RouteData -> Bool, List RouteData -> List RouteData )
 filterAndSorter { filter, sorter } =
     ( Filter.applyCustomFilter filter
-    , applyCustomSorter sorter
+    , Sorter.applyCustomSorter sorter
     )
-
-
-applyCustomSorter : Sorter.Model -> (List RouteData -> List RouteData)
-applyCustomSorter sortAttributes =
-    case List.head sortAttributes of
-        Nothing ->
-            identity
-
-        Just ( attr, order ) ->
-            \l -> sortByAttr attr order l
-
-
-sortByAttr : Sorter.SortAttribute -> Sorter.SortOrder -> List RouteData -> List RouteData
-sortByAttr attr order l =
-    l
-        |> sortByAttr2 attr
-        |> maybeReverse order
-
-
-sortByAttr2 : Sorter.SortAttribute -> List RouteData -> List RouteData
-sortByAttr2 attr =
-    case attr of
-        Sorter.Tickdate ->
-            List.sortWith tickdateSorter
-
-        _ ->
-            List.sortBy (getComparableAttr attr)
-
-
-getComparableAttr : Sorter.SortAttribute -> RouteData -> String
-getComparableAttr attr rd =
-    case attr of
-        Sorter.Name ->
-            rd.name
-
-        Sorter.Grade ->
-            rd.grade
-
-        Sorter.Area ->
-            rd.area
-
-        _ ->
-            ""
-
-
-maybeReverse : Sorter.SortOrder -> List a -> List a
-maybeReverse order =
-    case order of
-        Sorter.Ascending ->
-            identity
-
-        Sorter.Descending ->
-            List.reverse
-
-
-tickdateSorter : RouteData -> RouteData -> Order
-tickdateSorter rd1 rd2 =
-    case ( rd1.tickDate2, rd2.tickDate2 ) of
-        ( Just a, Just b ) ->
-            Date.compare a b
-
-        ( Just _, Nothing ) ->
-            GT
-
-        ( Nothing, Just _ ) ->
-            LT
-
-        _ ->
-            LT
 
 
 viewRoute : ( Metadata, RouteData ) -> Element Msg
