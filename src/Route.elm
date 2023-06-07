@@ -136,10 +136,34 @@ firstId =
     RouteId 90
 
 
-gradeCompare : String -> Int
-gradeCompare grade =
-    List.Extra.elemIndex grade gradeOrder
-        |> Maybe.withDefault 0
+gradeSorter : String -> String -> Order
+gradeSorter a b =
+    case ( List.Extra.elemIndex a gradeOrder, List.Extra.elemIndex b gradeOrder ) of
+        ( Just i1, Just i2 ) ->
+            if i1 < i2 then
+                LT
+
+            else if i1 == i2 then
+                EQ
+
+            else
+                GT
+
+        ( Just _, Nothing ) ->
+            GT
+
+        ( Nothing, Just _ ) ->
+            LT
+
+        ( Nothing, Nothing ) ->
+            if List.sort [ a, b ] == [ a, b ] then
+                LT
+
+            else if List.sort [ b, a ] == [ b, a ] then
+                EQ
+
+            else
+                GT
 
 
 gradeOrder : List String

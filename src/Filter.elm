@@ -3,6 +3,7 @@ module Filter exposing (..)
 import Element exposing (Element)
 import Element.Input
 import List.Extra
+import Route
 import Set exposing (Set)
 import Widget
 import Widget.Icon as Icon
@@ -25,7 +26,7 @@ type TickDateFilter
 
 
 type Msg
-    = PressedGradeFilter Int
+    = PressedGradeFilter String
     | PressedTickdateFilter
 
 
@@ -36,15 +37,10 @@ initialModel =
     }
 
 
-update : List String -> Msg -> Model -> Model
-update gradeOptions msg model =
+update : Msg -> Model -> Model
+update msg model =
     case msg of
-        PressedGradeFilter index ->
-            let
-                grade : String
-                grade =
-                    List.Extra.getAt index gradeOptions |> Maybe.withDefault ""
-            in
+        PressedGradeFilter grade ->
             { model
                 | grade =
                     (if Set.member grade model.grade then
@@ -77,7 +73,7 @@ rotateTickdateFilter filter =
             ShowHasTickdate
 
 
-viewFilter : (Msg -> msg) -> Model -> List String -> Element msg
+viewFilter : (Msg -> msg) -> Model -> Set String -> Element msg
 viewFilter msgFn model uniqueGrades =
     Element.column [ Element.spacing 5, Element.width Element.fill ]
         [ Element.text "Filters"
@@ -110,19 +106,24 @@ tickdateToStr filter =
             ""
 
 
-viewGradeFilter : (Msg -> msg) -> Set String -> List String -> Element msg
+viewGradeFilter : (Msg -> msg) -> Set String -> Set String -> Element msg
 viewGradeFilter msgFn selected options =
+    let
+        sortedGrades : List String
+        sortedGrades =
+            options |> Set.toList |> List.sortWith Route.gradeSorter
+    in
     { selected =
-        selected |> Set.map (\selectedGrade -> options |> List.Extra.elemIndex selectedGrade |> Maybe.withDefault 0)
+        selected |> Set.map (\selectedGrade -> sortedGrades |> List.Extra.elemIndex selectedGrade |> Maybe.withDefault 0)
     , options =
-        options
+        sortedGrades
             |> List.map
                 (\grade ->
                     { text = grade
                     , icon = always Element.none
                     }
                 )
-    , onSelect = \i -> Just <| (PressedGradeFilter i |> msgFn)
+    , onSelect = \i -> Just <| (PressedGradeFilter (List.Extra.getAt i sortedGrades |> Maybe.withDefault "") |> msgFn)
     }
         |> Widget.multiSelect
         |> Widget.wrappedButtonRow
@@ -130,10 +131,11 @@ viewGradeFilter msgFn selected options =
             , content = Material.containedButton Material.defaultPalette
             }
 
+
 filledButtonRow : Widget.RowStyle msg
 filledButtonRow =
     let
-        br = Material.buttonRow
+        br =
+            Material.buttonRow
     in
     { br | elementRow = Element.width Element.fill :: br.elementRow }
-

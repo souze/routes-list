@@ -16,7 +16,6 @@ import Gen.Route
 import Html
 import Html.Attributes
 import Lamdera
-import List.Extra
 import Maybe.Extra
 import Page
 import Request
@@ -141,7 +140,7 @@ type Msg
 
 
 update : Shared.Model -> Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
-update shared req msg model =
+update _ req msg model =
     case msg of
         RouteEditPaneMsg rid editPaneMsg ->
             ( { model | metadatas = model.metadatas |> updateRouteEditPane rid editPaneMsg }
@@ -154,7 +153,7 @@ update shared req msg model =
             )
 
         ButtonPressed id ->
-            buttonPressed id req shared.currentDate model
+            buttonPressed id req model
 
         SortSelected sorterMsg ->
             ( { model | filter = model.filter |> updateSorter sorterMsg }
@@ -162,7 +161,7 @@ update shared req msg model =
             )
 
         FilterMsg filterMsg ->
-            ( { model | filter = model.filter |> updateFilter (uniqueGrades shared.routes) filterMsg }
+            ( { model | filter = model.filter |> updateFilter filterMsg }
             , Cmd.none
             )
 
@@ -181,11 +180,11 @@ updateRouteEditPane rid msg metadatas =
             )
 
 
-updateFilter : List String -> Filter.Msg -> Filter -> Filter
-updateFilter gradeOptions msg filter =
+updateFilter : Filter.Msg -> Filter -> Filter
+updateFilter msg filter =
     { filter
         | filter =
-            Filter.update gradeOptions msg filter.filter
+            Filter.update msg filter.filter
     }
 
 
@@ -214,11 +213,11 @@ type ButtonId
     | CreateButton
 
 
-buttonPressed : ButtonId -> Request.With params -> Date -> Model -> ( Model, Cmd Msg )
-buttonPressed id req today model =
+buttonPressed : ButtonId -> Request.With params -> Model -> ( Model, Cmd Msg )
+buttonPressed id _ model =
     case id of
         ExpandRouteButton routeId ->
-            ( toggleExpansionRouteId routeId today model
+            ( toggleExpansionRouteId routeId model
             , Cmd.none
             )
 
@@ -276,8 +275,8 @@ enableEdit currentDate rd m =
     }
 
 
-toggleExpansionRouteId : RouteId -> Date -> Model -> Model
-toggleExpansionRouteId id today m =
+toggleExpansionRouteId : RouteId -> Model -> Model
+toggleExpansionRouteId id m =
     { m
         | metadatas =
             m.metadatas
@@ -332,12 +331,11 @@ toggleFilterButton =
     CommonView.buttonToSendEvent "Filter" ToggleFilters
 
 
-uniqueGrades : List Route.RouteData -> List String
+uniqueGrades : List Route.RouteData -> Set String
 uniqueGrades routes =
     routes
         |> List.map .grade
-        |> List.sort
-        |> List.Extra.unique
+        |> Set.fromList
 
 
 viewRouteList : Shared.Model -> Model -> List (Element Msg)
@@ -451,13 +449,13 @@ filterTickdate : Filter.TickDateFilter -> (RouteData -> Bool)
 filterTickdate filter =
     case filter of
         Filter.TickdateRangeFrom ->
-            \rd -> True
+            \_ -> True
 
         Filter.TickdateRangeTo ->
-            \rd -> True
+            \_ -> True
 
         Filter.TickdateRangeBetween ->
-            \rd -> True
+            \_ -> True
 
         Filter.ShowHasTickdate ->
             hasTickDate

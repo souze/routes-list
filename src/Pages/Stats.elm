@@ -107,8 +107,7 @@ gradeChart pred routes =
                 |> List.filter pred
                 |> groupByGrade
                 |> Dict.toList
-                |> List.sortBy Tuple.first
-                |> List.sortBy (Tuple.first >> Route.gradeCompare)
+                |> List.sortWith (\a b -> Route.gradeSorter (Tuple.first a) (Tuple.first b))
     in
     C.chart
         [ CA.width 300
