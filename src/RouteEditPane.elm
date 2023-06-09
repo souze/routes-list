@@ -74,7 +74,7 @@ updateDatePickerData changeEvent currentDatePicked text model =
         DatePicker.DateChanged date ->
             { date = Just date
             , text = Date.toIsoString date
-            , model = model
+            , model = model |> DatePicker.close
             }
 
         DatePicker.TextChanged newText ->

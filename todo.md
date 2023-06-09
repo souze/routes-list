@@ -15,7 +15,6 @@
 
 ## Other
 
-* Close date picker when date selected
-* Show number of filtered routes
 * Pictures and Videos from link
+* Show number of filtered routes
 * Admin Json in
