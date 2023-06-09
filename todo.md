@@ -23,6 +23,7 @@ V2
     ✅ Filter type
     ✅ Sort grades properly
     - Show number of filtered routes
+* Nicer expanded route view. Not just a list of "Type: Trad", but instead maybe some smaller grayed out cursive font trad or whatever
 * Show password checkbox
 * Submit on enter
 * Close date picker when date selected

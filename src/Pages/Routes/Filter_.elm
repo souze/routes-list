@@ -74,7 +74,6 @@ initialMetadata routeId =
 type alias Model =
     { filter : Filter
     , showSortBox : Bool
-    , currentDate : Date
     , metadatas : Dict Int Metadata
     }
 
@@ -101,7 +100,6 @@ init req _ =
         Just filter_ ->
             ( { filter = filter_
               , showSortBox = False
-              , currentDate = initialDate
               , metadatas = Dict.empty
               }
             , Cmd.none
@@ -110,7 +108,6 @@ init req _ =
         Nothing ->
             ( { filter = { filter = initialAllFilter, sorter = Sorter.initialModel }
               , showSortBox = False
-              , currentDate = initialDate
               , metadatas = Dict.empty
               }
             , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
@@ -140,7 +137,7 @@ type Msg
 
 
 update : Shared.Model -> Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
-update _ req msg model =
+update shared req msg model =
     case msg of
         RouteEditPaneMsg rid editPaneMsg ->
             ( { model | metadatas = model.metadatas |> updateRouteEditPane rid editPaneMsg }
@@ -153,7 +150,7 @@ update _ req msg model =
             )
 
         ButtonPressed id ->
-            buttonPressed id req model
+            buttonPressed id shared.currentDate model
 
         SortSelected sorterMsg ->
             ( { model | filter = model.filter |> updateSorter sorterMsg }
@@ -213,8 +210,8 @@ type ButtonId
     | CreateButton
 
 
-buttonPressed : ButtonId -> Request.With params -> Model -> ( Model, Cmd Msg )
-buttonPressed id _ model =
+buttonPressed : ButtonId -> Date -> Model -> ( Model, Cmd Msg )
+buttonPressed id currentDate model =
     case id of
         ExpandRouteButton routeId ->
             ( toggleExpansionRouteId routeId model
@@ -222,7 +219,7 @@ buttonPressed id _ model =
             )
 
         EditRouteButton route ->
-            ( enableEdit model.currentDate route model
+            ( enableEdit currentDate route model
             , Cmd.none
             )
 
