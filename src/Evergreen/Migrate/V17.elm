@@ -522,7 +522,11 @@ migrate_Pages_MoreOptions_Msg old =
 
 migrate_Pages_NewRoute_Model : Evergreen.V14.Pages.NewRoute.Model -> Evergreen.V17.Pages.NewRoute.Model
 migrate_Pages_NewRoute_Model old =
-    { newRouteData = RouteEditPane.init (Date.fromRataDie 1) (migrate_Route_NewRouteData old.route)
+    { newRouteData =
+        { route = migrate_Route_NewRouteData old.route
+        , datePickerModel = DatePicker.initWithToday (Date.fromRataDie 1)
+        , datePickerText = ""
+        }
     }
 
 
@@ -646,9 +650,22 @@ migrate_Pages_Stats_Msg old =
             Evergreen.V17.Pages.Stats.ReplaceMe
 
 
+newRouteDataFromExisting : Evergreen.V17.Route.RouteData -> Evergreen.V17.Route.NewRouteData
+newRouteDataFromExisting r =
+    { name = r.name
+    , area = r.area
+    , grade = r.grade
+    , notes = r.notes
+    , tickDate2 = r.tickDate2
+    , type_ = r.type_
+    , images = r.images
+    , videos = r.videos
+    }
+
+
 migrate_RouteEditPane_Model : Evergreen.V14.Route.RouteData -> Evergreen.V17.RouteEditPane.Model
 migrate_RouteEditPane_Model old =
-    { route = Route.newRouteDataFromExisting (migrate_Route_RouteData old)
+    { route = newRouteDataFromExisting (migrate_Route_RouteData old)
     , datePickerModel = DatePicker.init
     , datePickerText = ""
     }
