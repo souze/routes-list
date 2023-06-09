@@ -1,4 +1,4 @@
-module Pages.Stats exposing (Model, Msg, groupByGrade, page)
+module Pages.Stats exposing (Model, Msg(..), groupByGrade, page)
 
 import Chart as C
 import Chart.Attributes as CA

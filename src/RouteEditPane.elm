@@ -1,4 +1,4 @@
-module RouteEditPane exposing (Model, Msg, init, update, view)
+module RouteEditPane exposing (Model, Msg(..), init, update, view)
 
 import Bridge
 import CommonView
