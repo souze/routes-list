@@ -15,8 +15,7 @@
 
 ## Other
 
-* Show number of filtered routes
-* Nicer expanded route view. Not just a list of "Type: Trad", but instead maybe some smaller grayed out cursive font trad or whatever
 * Close date picker when date selected
+* Show number of filtered routes
 * Pictures and Videos from link
 * Admin Json in

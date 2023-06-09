@@ -413,16 +413,23 @@ expandRouteColumn =
 viewRouteExpandedSolid : RouteData -> Element.Element Msg
 viewRouteExpandedSolid rd =
     expandRouteColumn
-        [ Element.el [ Element.Font.size 20 ] <| Element.text rd.name
-        , Element.text <| "Area: " ++ rd.area
-        , Element.text <| "Grade: " ++ rd.grade
-        , Element.text <| "Type: " ++ climbTypeToString rd.type_
-        , case rd.tickDate2 of
-            Just tickdate ->
-                Element.text <| "Climbed on " ++ Date.toIsoString tickdate
+        [ Element.paragraph [ Element.Font.size 26 ]
+            [ Element.text rd.name
+            , Element.el [ Element.Font.color <| Element.rgba 0.5 0.5 0.5 0.5 ] (Element.text " - ")
+            , Element.text rd.grade
+            ]
+        , Element.column [ Element.spacing 4, Element.Font.size 16 ]
+            [ Element.text <| climbTypeToString rd.type_
+            , Element.text <| "In " ++ rd.area
+            , Element.text
+                (case rd.tickDate2 of
+                    Just tickdate ->
+                        "☑ " ++ Date.toIsoString tickdate
 
-            Nothing ->
-                Element.text <| "Not climbed"
+                    Nothing ->
+                        "📝 Not climbed"
+                )
+            ]
         , viewSolidNotes rd.notes
         , if List.isEmpty rd.images then
             Element.none
