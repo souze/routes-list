@@ -17,6 +17,7 @@
 
 ## Other
 
+* Custom tags per route. Useful for example onsight
 * Pictures and Videos from link
 * Show number of filtered routes
 * Admin Json in
