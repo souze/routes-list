@@ -50,9 +50,10 @@ init =
 
 type Msg
     = ClickedSignIn
-    | FieldChanged String String
+    | FieldChanged FieldType String
     | ToggleShowPassword
 
+type FieldType = UsernameField | PasswordField
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
@@ -64,18 +65,15 @@ update msg model =
                     (Bridge.ToBackendLogIn model.username model.password)
             )
 
-        FieldChanged "username" newValue ->
+        FieldChanged UsernameField newValue ->
             ( { model | username = newValue }
             , Effect.none
             )
 
-        FieldChanged "password" newValue ->
+        FieldChanged PasswordField newValue ->
             ( { model | password = newValue }
             , Effect.none
             )
-
-        FieldChanged _ _ ->
-            ( model, Effect.none )
 
         ToggleShowPassword ->
             ( { model| showPassword = not model.showPassword}, Effect.none )
@@ -109,13 +107,13 @@ mainColumn =
 viewLogin : Model -> List (Element Msg)
 viewLogin data =
     [ Element.Input.username []
-        { onChange = FieldChanged "username"
+        { onChange = FieldChanged UsernameField
         , text = data.username
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Username")
         }
     , Element.row [ Element.spacing 15, Element.width Element.fill] [ Element.Input.currentPassword [ Element.width Element.fill]
-        { onChange = FieldChanged "password"
+        { onChange = FieldChanged PasswordField
         , text = data.password
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Password")
