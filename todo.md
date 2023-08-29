@@ -11,7 +11,7 @@
 
 ✅ Show password checkbox
 ✅ Submit on enter
-* Nicer wrong username/password information
+✅ Nicer wrong username/password information
 * Sign up
 * Oauth?
 

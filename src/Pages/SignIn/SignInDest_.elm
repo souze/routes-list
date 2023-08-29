@@ -6,6 +6,7 @@ import Gen.Params.SignIn.SignInDest_ exposing (Params)
 import Element exposing (Element)
 import Element.Background
 import Element.Input
+import Element.Font
 import Lamdera
 import Page
 import Request
@@ -36,6 +37,7 @@ type alias Model =
     { username : String
     , password : String
     , showPassword : Bool
+    , errorMsg : Maybe String
     }
 
 
@@ -43,7 +45,7 @@ init : ( Model, Effect Msg )
 init =
     ( { username = "",
     password = ""
-    , showPassword = False}, Effect.none )
+    , showPassword = False, errorMsg = Nothing}, Effect.none )
 
 
 
@@ -54,6 +56,7 @@ type Msg
     = ClickedSignIn
     | FieldChanged FieldType String
     | ToggleShowPassword
+    | WrongUsernameOrPassword
 
 type FieldType = UsernameField | PasswordField
 
@@ -79,6 +82,10 @@ update msg model =
 
         ToggleShowPassword ->
             ( { model| showPassword = not model.showPassword}, Effect.none )
+
+        WrongUsernameOrPassword ->
+            ( { model | errorMsg = Just "Wrong username or password 😢" },
+            Effect.none )
 
 
 
@@ -130,8 +137,16 @@ viewLogin data =
             , active = data.showPassword
             }
         ]
+    , case data.errorMsg of
+        Just errorMsg ->
+            Element.el [Element.Font.color red ] (Element.text errorMsg)
+        Nothing ->
+            Element.none
     , buttonToSendEvent "Login" ClickedSignIn
     ]
+
+red : Element.Color
+red = Element.rgb255 200 30 30
 
 onEnter : msg -> Element.Attribute msg
 onEnter msg =
