@@ -14,6 +14,8 @@ import View exposing (View)
 import Page
 import Widget
 import Widget.Material
+import Html.Events
+import Json.Decode
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -106,13 +108,14 @@ mainColumn =
 
 viewLogin : Model -> List (Element Msg)
 viewLogin data =
-    [ Element.Input.username []
+    [ Element.Input.username [ onEnter ClickedSignIn ]
         { onChange = FieldChanged UsernameField
         , text = data.username
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Username")
         }
-    , Element.row [ Element.spacing 15, Element.width Element.fill] [ Element.Input.currentPassword [ Element.width Element.fill]
+    , Element.row [ Element.spacing 15, Element.width Element.fill] [
+        Element.Input.currentPassword [ onEnter ClickedSignIn, Element.width Element.fill]
         { onChange = FieldChanged PasswordField
         , text = data.password
         , placeholder = Nothing
@@ -129,6 +132,23 @@ viewLogin data =
         ]
     , buttonToSendEvent "Login" ClickedSignIn
     ]
+
+onEnter : msg -> Element.Attribute msg
+onEnter msg =
+    Element.htmlAttribute
+        (Html.Events.on "keyup"
+            (Json.Decode.field "key" Json.Decode.string
+                |> Json.Decode.andThen
+                    (\key ->
+                        if key == "Enter" then
+                            Json.Decode.succeed msg
+
+                        else
+                            Json.Decode.fail "Not the enter key"
+                    )
+            )
+        )
+
 
 
 actionButtonLabel : String -> Element.Element msg

@@ -10,7 +10,7 @@
 ## Login
 
 ✅ Show password checkbox
-* Submit on enter
+✅ Submit on enter
 * Nicer wrong username/password information
 * Sign up
 * Oauth?
