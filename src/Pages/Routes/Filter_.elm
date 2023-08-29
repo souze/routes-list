@@ -500,11 +500,11 @@ viewRouteOneline rd =
         , label =
             Element.wrappedRow
                 [ Element.padding 12
-                , Element.spacing 20
+                , Element.spacing 12
                 , Element.Background.color (Element.rgb 0.8 0.8 0.8)
                 , Element.width Element.fill
                 ]
-                [ Element.el [ Element.width (Element.px 17) ] (Element.text rd.grade)
+                [ minWidthText 25 rd.grade
                 , Element.el [] <| Element.text rd.name
                 , rd.tickDate2
                     |> Maybe.map
@@ -522,6 +522,14 @@ viewRouteOneline rd =
                     )
                 ]
         }
+
+minWidthText : Int -> String -> Element msg
+minWidthText min text =
+                Element.column [] [
+                    Element.el [ Element.width Element.shrink ] (Element.text text)
+                    , Element.el [Element.width (Element.px min)]  Element.none
+                ]
+
 
 
 viewExistingOrNewRouteExpanded : RouteId -> RouteEditPane.Model -> Element.Element Msg
