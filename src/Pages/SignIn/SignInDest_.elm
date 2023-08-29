@@ -1,22 +1,21 @@
 module Pages.SignIn.SignInDest_ exposing (Model, Msg(..), page)
 
-import Effect exposing (Effect)
 import Bridge
-import Gen.Params.SignIn.SignInDest_ exposing (Params)
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Background
-import Element.Input
 import Element.Font
+import Element.Input
+import Gen.Params.SignIn.SignInDest_ exposing (Params)
+import Html.Events
+import Json.Decode
 import Lamdera
 import Page
 import Request
 import Shared
 import View exposing (View)
-import Page
 import Widget
 import Widget.Material
-import Html.Events
-import Json.Decode
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -43,9 +42,13 @@ type alias Model =
 
 init : ( Model, Effect Msg )
 init =
-    ( { username = "",
-    password = ""
-    , showPassword = False, errorMsg = Nothing}, Effect.none )
+    ( { username = ""
+      , password = ""
+      , showPassword = False
+      , errorMsg = Nothing
+      }
+    , Effect.none
+    )
 
 
 
@@ -58,7 +61,11 @@ type Msg
     | ToggleShowPassword
     | WrongUsernameOrPassword
 
-type FieldType = UsernameField | PasswordField
+
+type FieldType
+    = UsernameField
+    | PasswordField
+
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
@@ -81,11 +88,12 @@ update msg model =
             )
 
         ToggleShowPassword ->
-            ( { model| showPassword = not model.showPassword}, Effect.none )
+            ( { model | showPassword = not model.showPassword }, Effect.none )
 
         WrongUsernameOrPassword ->
-            ( { model | errorMsg = Just "Wrong username or password 😢" },
-            Effect.none )
+            ( { model | errorMsg = Just "Wrong username or password 😢" }
+            , Effect.none
+            )
 
 
 
@@ -121,17 +129,22 @@ viewLogin data =
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Username")
         }
-    , Element.row [ Element.spacing 15, Element.width Element.fill] [
-        Element.Input.currentPassword [ onEnter ClickedSignIn, Element.width Element.fill]
-        { onChange = FieldChanged PasswordField
-        , text = data.password
-        , placeholder = Nothing
-        , label = Element.Input.labelLeft [] (Element.text "Password")
-        , show = data.showPassword
-        }
-        , Element.text (if data.showPassword then "Hide password" else "Show password")
-        ,
-        Widget.switch (Widget.Material.switch Widget.Material.defaultPalette)
+    , Element.row [ Element.spacing 15, Element.width Element.fill ]
+        [ Element.Input.currentPassword [ onEnter ClickedSignIn, Element.width Element.fill ]
+            { onChange = FieldChanged PasswordField
+            , text = data.password
+            , placeholder = Nothing
+            , label = Element.Input.labelLeft [] (Element.text "Password")
+            , show = data.showPassword
+            }
+        , Element.text
+            (if data.showPassword then
+                "Hide password"
+
+             else
+                "Show password"
+            )
+        , Widget.switch (Widget.Material.switch Widget.Material.defaultPalette)
             { description = "Show password"
             , onPress = Just ToggleShowPassword
             , active = data.showPassword
@@ -139,14 +152,18 @@ viewLogin data =
         ]
     , case data.errorMsg of
         Just errorMsg ->
-            Element.el [Element.Font.color red ] (Element.text errorMsg)
+            Element.el [ Element.Font.color red ] (Element.text errorMsg)
+
         Nothing ->
             Element.none
     , buttonToSendEvent "Login" ClickedSignIn
     ]
 
+
 red : Element.Color
-red = Element.rgb255 200 30 30
+red =
+    Element.rgb255 200 30 30
+
 
 onEnter : msg -> Element.Attribute msg
 onEnter msg =
@@ -165,7 +182,6 @@ onEnter msg =
         )
 
 
-
 actionButtonLabel : String -> Element.Element msg
 actionButtonLabel text =
     Element.el [ Element.Background.color (Element.rgb 0.6 0.6 0.6), Element.padding 8 ] (Element.text text)
@@ -177,4 +193,3 @@ buttonToSendEvent labelText event =
         { onPress = Just event
         , label = actionButtonLabel labelText
         }
-

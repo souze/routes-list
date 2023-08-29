@@ -15,6 +15,7 @@ backendModel : Old.BackendModel -> ModelMigration New.BackendModel New.BackendMs
 backendModel old =
     ModelUnchanged
 
+
 frontendMsg : Old.FrontendMsg -> MsgMigration New.FrontendMsg New.FrontendMsg
 frontendMsg old =
     MsgOldValueIgnored

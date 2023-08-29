@@ -132,7 +132,7 @@ updateFromBackend msg model =
             pageUpdate (Gen.Msg.Admin__ShowJson (Pages.Admin.ShowJson.BackupModelFromBackend backupModel)) model
 
         ToFrontendWrongUserNamePassword ->
-            pageUpdate (Gen.Msg.SignIn__SignInDest_ (Pages.SignIn.SignInDest_.WrongUsernameOrPassword)) model
+            pageUpdate (Gen.Msg.SignIn__SignInDest_ Pages.SignIn.SignInDest_.WrongUsernameOrPassword) model
 
         _ ->
             ( model, Cmd.none )

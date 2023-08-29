@@ -20,7 +20,6 @@ See <https://dashboard.lamdera.com/docs/evergreen> for more info.
 -}
 
 import Dict
-import Set
 import Evergreen.V12.BackupModel
 import Evergreen.V12.ConfirmComponent
 import Evergreen.V12.Filter
@@ -72,6 +71,7 @@ import Evergreen.V7.Types
 import Lamdera.Migrations exposing (..)
 import List
 import Maybe
+import Set
 
 
 frontendModel : Evergreen.V7.Types.FrontendModel -> ModelMigration Evergreen.V12.Types.FrontendModel Evergreen.V12.Types.FrontendMsg
@@ -467,11 +467,13 @@ migrate_Pages_Routes_Filter__Model old =
     , metadatas = old.metadatas |> Dict.map (\k -> migrate_Pages_Routes_Filter__Metadata)
     }
 
+
 filterInitialModel : Evergreen.V12.Filter.Model
 filterInitialModel =
     { grade = Set.empty
     , tickdate = Evergreen.V12.Filter.ShowAllTickdates
     }
+
 
 sorterInitialModel : Evergreen.V12.Sorter.Model
 sorterInitialModel =

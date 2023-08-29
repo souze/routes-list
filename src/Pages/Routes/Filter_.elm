@@ -523,13 +523,13 @@ viewRouteOneline rd =
                 ]
         }
 
+
 minWidthText : Int -> String -> Element msg
 minWidthText min text =
-                Element.column [] [
-                    Element.el [ Element.width Element.shrink ] (Element.text text)
-                    , Element.el [Element.width (Element.px min)]  Element.none
-                ]
-
+    Element.column []
+        [ Element.el [ Element.width Element.shrink ] (Element.text text)
+        , Element.el [ Element.width (Element.px min) ] Element.none
+        ]
 
 
 viewExistingOrNewRouteExpanded : RouteId -> RouteEditPane.Model -> Element.Element Msg
