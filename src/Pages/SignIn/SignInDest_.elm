@@ -12,6 +12,8 @@ import Request
 import Shared
 import View exposing (View)
 import Page
+import Widget
+import Widget.Material
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -31,12 +33,15 @@ page shared req =
 type alias Model =
     { username : String
     , password : String
+    , showPassword : Bool
     }
 
 
 init : ( Model, Effect Msg )
 init =
-    ( { username = "", password = "" }, Effect.none )
+    ( { username = "",
+    password = ""
+    , showPassword = False}, Effect.none )
 
 
 
@@ -46,6 +51,7 @@ init =
 type Msg
     = ClickedSignIn
     | FieldChanged String String
+    | ToggleShowPassword
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -70,6 +76,9 @@ update msg model =
 
         FieldChanged _ _ ->
             ( model, Effect.none )
+
+        ToggleShowPassword ->
+            ( { model| showPassword = not model.showPassword}, Effect.none )
 
 
 
@@ -105,13 +114,21 @@ viewLogin data =
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Username")
         }
-    , Element.Input.currentPassword []
+    , Element.row [ Element.spacing 15, Element.width Element.fill] [ Element.Input.currentPassword [ Element.width Element.fill]
         { onChange = FieldChanged "password"
         , text = data.password
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Password")
-        , show = False
+        , show = data.showPassword
         }
+        , Element.text (if data.showPassword then "Hide password" else "Show password")
+        ,
+        Widget.switch (Widget.Material.switch Widget.Material.defaultPalette)
+            { description = "Show password"
+            , onPress = Just ToggleShowPassword
+            , active = data.showPassword
+            }
+        ]
     , buttonToSendEvent "Login" ClickedSignIn
     ]
 

@@ -9,7 +9,7 @@
 
 ## Login
 
-* Show password checkbox
+✅ Show password checkbox
 * Submit on enter
 * Nicer wrong username/password information
 * Sign up
