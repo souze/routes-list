@@ -31,8 +31,6 @@ init images index =
     }
 
 
-
-
 update : Msg -> Model -> Maybe Model
 update msg model =
     case msg of
