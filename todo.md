@@ -20,6 +20,8 @@
 * Image gallery
     - Restore scroll position when returning
     - Nicer image failed to load placeholder
+    - Swipe left/right
+    - Setting to toggle single picture/all pictures in column
     - input validation
         - Check if link is valid?
         - Show preview?
