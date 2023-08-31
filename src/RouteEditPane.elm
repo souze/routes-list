@@ -19,6 +19,7 @@ type alias Model =
     { route : NewRouteData
     , datePickerModel : DatePicker.Model
     , datePickerText : String
+    , picturesText : String
     }
 
 
@@ -27,7 +28,13 @@ init currentDate initialData =
     { route = initialData
     , datePickerModel = DatePicker.initWithToday currentDate
     , datePickerText = ""
+    , picturesText = initialPicturesText initialData.images
     }
+
+
+initialPicturesText : List String -> String
+initialPicturesText data =
+    String.join "\n" data
 
 
 
@@ -43,7 +50,15 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         FieldUpdated fieldName newValue ->
-            { model | route = model.route |> updateEditRouteField fieldName newValue }
+            { model
+                | route = model.route |> updateEditRouteField fieldName newValue
+                , picturesText =
+                    if fieldName == "pictures" then
+                        newValue
+
+                    else
+                        model.picturesText
+            }
 
         DatePickerUpdate event ->
             updateDatePicker event model
@@ -105,6 +120,9 @@ updateEditRouteField fieldName newValue rd =
         "notes" ->
             { rd | notes = newValue }
 
+        "pictures" ->
+            { rd | images = newValue |> parsePictures }
+
         "type" ->
             case String.toInt newValue of
                 Just index ->
@@ -115,6 +133,19 @@ updateEditRouteField fieldName newValue rd =
 
         _ ->
             rd
+
+
+parsePictures : String -> List String
+parsePictures input =
+    case String.trim input of
+        "" ->
+            []
+
+        trimmedInput ->
+            trimmedInput
+                |> String.lines
+                |> List.map String.trim
+                |> List.filter (\s -> s /= "")
 
 
 indexToType : Int -> Route.ClimbType
@@ -185,8 +216,25 @@ view model =
         , onelineEdit "grade" "Grade" model.route.grade
         , climbTypeSelect model
         , tickdatePicker model
+        , pictures model.picturesText
         , notesField model.route.notes
         ]
+
+
+placeholderText : String -> Element.Input.Placeholder Msg
+placeholderText text =
+    Element.Input.placeholder [] (Element.text text)
+
+
+pictures : String -> Element Msg
+pictures text =
+    Element.Input.multiline [ Element.width Element.fill ]
+        { onChange = FieldUpdated "pictures"
+        , text = text
+        , placeholder = Just <| placeholderText "Newline separated list of URLs"
+        , label = Element.Input.labelAbove [] (Element.text "Pictures")
+        , spellcheck = True
+        }
 
 
 climbTypeSelect : Model -> Element Msg
@@ -199,7 +247,7 @@ notesField text =
     Element.Input.multiline [ Element.width Element.fill ]
         { onChange = FieldUpdated "notes"
         , text = text
-        , placeholder = Nothing
+        , placeholder = Just <| placeholderText "Notes..."
         , label = Element.Input.labelAbove [] (Element.text "Notes")
         , spellcheck = True
         }

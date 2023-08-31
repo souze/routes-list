@@ -63,12 +63,10 @@ testingRoutes =
       , type_ = Trad
       , images =
             [ "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/50a6f7c22676c74e8908a0b44a723ebf.0.jpg"
-            , "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/50a6f7c22676c74e8908a0b44a723ebf.0.jpg"
+            , "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20220625_140816.jpg"
             ]
       , videos =
-            [ "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20200408_175256.mp4"
-            , "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20200408_175256.mp4"
-            ]
+            []
       }
     , { name = "Bokus Dokus"
       , grade = "3+"

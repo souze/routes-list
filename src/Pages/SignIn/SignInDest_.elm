@@ -1,4 +1,4 @@
-module Pages.SignIn.SignInDest_ exposing (Model, FieldType(..), Msg(..), page)
+module Pages.SignIn.SignInDest_ exposing (FieldType(..), Model, Msg(..), page)
 
 import Bridge
 import Effect exposing (Effect)

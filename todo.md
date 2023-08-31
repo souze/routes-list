@@ -17,8 +17,15 @@
 
 ## Other
 
+* Image gallery
+    - Restore scroll position when returning
+    - Nicer image failed to load placeholder
+    - input validation
+        - Check if link is valid?
+        - Show preview?
+        - Some other input form?
 * Custom tags per route. Useful for example onsight
-* Pictures and Videos from link
+* Video gallery
 * Show number of filtered routes
 * Admin Json in
 * Better import/export
@@ -28,4 +35,4 @@
             - Import Json
             - Import Csv
             - Export Json
-            - Import Json
+            - Export Csv

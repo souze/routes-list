@@ -15,6 +15,7 @@ import Gen.Params.Routes.Filter_ exposing (Params)
 import Gen.Route
 import Html
 import Html.Attributes
+import ImageGallery
 import Lamdera
 import Maybe.Extra
 import Page
@@ -26,6 +27,7 @@ import Shared
 import Sorter
 import Time
 import View exposing (View)
+import Widget
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -75,6 +77,7 @@ type alias Model =
     { filter : Filter
     , showSortBox : Bool
     , metadatas : Dict Int Metadata
+    , galleryModel : Maybe ImageGallery.Model
     }
 
 
@@ -101,6 +104,7 @@ init req _ =
             ( { filter = filter_
               , showSortBox = False
               , metadatas = Dict.empty
+              , galleryModel = Nothing
               }
             , Cmd.none
             )
@@ -109,6 +113,7 @@ init req _ =
             ( { filter = { filter = initialAllFilter, sorter = Sorter.initialModel }
               , showSortBox = False
               , metadatas = Dict.empty
+              , galleryModel = Nothing
               }
             , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
             )
@@ -134,6 +139,8 @@ type Msg
     | SortSelected Sorter.SorterMsg
     | FilterMsg Filter.Msg
     | RouteEditPaneMsg RouteId RouteEditPane.Msg
+    | GalleryMsg ImageGallery.Msg
+    | ThumbnailPressed Int (List String)
 
 
 update : Shared.Model -> Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
@@ -159,6 +166,23 @@ update shared req msg model =
 
         FilterMsg filterMsg ->
             ( { model | filter = model.filter |> updateFilter filterMsg }
+            , Cmd.none
+            )
+
+        GalleryMsg galleryMsg ->
+            case model.galleryModel of
+                Just galleryModel ->
+                    ( { model | galleryModel = ImageGallery.update galleryMsg galleryModel }
+                    , Cmd.none
+                    )
+
+                Nothing ->
+                    ( model
+                    , Cmd.none
+                    )
+
+        ThumbnailPressed index urls ->
+            ( { model | galleryModel = Just <| ImageGallery.init urls index }
             , Cmd.none
             )
 
@@ -303,11 +327,17 @@ view shared model =
 
 viewBody : Shared.Model -> Model -> Element Msg
 viewBody shared model =
-    CommonView.mainColumn
-        (CommonView.header
-            :: viewSortBox shared model
-            :: viewRouteList shared model
-        )
+    case model.galleryModel of
+        Just galleryModel ->
+            ImageGallery.view galleryModel
+                |> Element.map GalleryMsg
+
+        Nothing ->
+            CommonView.mainColumn
+                (CommonView.header
+                    :: viewSortBox shared model
+                    :: viewRouteList shared model
+                )
 
 
 viewSortBox : Shared.Model -> Model -> Element Msg
@@ -435,7 +465,7 @@ viewRouteExpandedSolid rd =
             Element.none
 
           else
-            Element.none
+            viewImages rd.images
         , if List.isEmpty rd.videos then
             Element.none
 
@@ -457,6 +487,23 @@ viewRouteExpandedSolid rd =
             , label = CommonView.actionButtonLabel "Edit"
             }
         ]
+
+
+viewImages : List String -> Element Msg
+viewImages images =
+    Element.wrappedRow [ Element.spacing 20 ] (images |> List.indexedMap (viewSingleThumbnail images))
+
+
+viewSingleThumbnail : List String -> Int -> String -> Element Msg
+viewSingleThumbnail all index url =
+    Element.Input.button [ Element.width (Element.px 100) ]
+        { onPress = Just <| ThumbnailPressed index all
+        , label =
+            Element.image [ Element.width Element.fill ]
+                { src = url
+                , description = "User added picture associated with route"
+                }
+        }
 
 
 viewSolidNotes : String -> Element msg
