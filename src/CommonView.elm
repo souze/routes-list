@@ -121,7 +121,12 @@ selectMany selected options =
             |> List.map
                 (\item ->
                     { text = item
-                    , icon = always Element.none
+                    , icon =
+                        if Set.member item selected then
+                            always (Element.text "🟢")
+
+                        else
+                            always Element.none
                     }
                 )
     , onSelect = \i -> Just <| (List.Extra.getAt i options |> Maybe.withDefault "")

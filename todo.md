@@ -27,7 +27,6 @@
         - Check if link is valid?
         - Show preview?
         - Some other input form?
-* More visible "This is selected" in filter
 * Video gallery
 * Show number of filtered routes
 * Admin Json in
