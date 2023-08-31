@@ -1,4 +1,4 @@
-module ImageGallery exposing (Model, Msg, init, update, view)
+module ImageGallery exposing (Model, Msg(..), init, update, view)
 
 import Element exposing (Element)
 import Element.Font
