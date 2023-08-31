@@ -35,6 +35,7 @@ type alias RouteData =
     , area : String
     , grade : String
     , notes : String
+    , tags : List String
     , tickDate2 : Maybe Date.Date
     , type_ : ClimbType
     , images : List String
@@ -49,6 +50,7 @@ newRouteDataFromExisting r =
     , area = r.area
     , grade = r.grade
     , notes = r.notes
+    , tags = r.tags
     , tickDate2 = r.tickDate2
     , type_ = r.type_
     , images = r.images
@@ -62,6 +64,7 @@ initialNewRouteData =
     , area = ""
     , grade = ""
     , notes = ""
+    , tags = []
     , tickDate2 = Nothing
     , type_ = Trad
     , images = []
@@ -74,6 +77,7 @@ type alias NewRouteData =
     , area : String
     , grade : String
     , notes : String
+    , tags : List String
     , tickDate2 : Maybe Date.Date
     , type_ : ClimbType
     , images : List String
@@ -87,6 +91,7 @@ type alias CommonRouteData a =
         , area : String
         , grade : String
         , notes : String
+        , tags : List String
         , tickDate2 : Maybe Date.Date
         , type_ : ClimbType
         , images : List String
@@ -156,6 +161,7 @@ commonToExistingRoute id common =
     , area = common.area
     , grade = common.grade
     , notes = common.notes
+    , tags = common.tags
     , tickDate2 = common.tickDate2
     , type_ = common.type_
     , images = common.images

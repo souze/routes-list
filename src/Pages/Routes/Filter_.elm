@@ -345,7 +345,7 @@ viewSortBox shared model =
     if model.showSortBox then
         Element.column [ Element.spacing 10 ]
             [ toggleFilterButton
-            , Filter.viewFilter FilterMsg model.filter.filter (shared.routes |> uniqueGrades)
+            , Filter.viewFilter FilterMsg model.filter.filter (shared.routes |> uniqueGrades) (shared.routes |> uniqueTags)
             , Sorter.sortOptions SortSelected model.filter.sorter
             ]
 
@@ -362,6 +362,13 @@ uniqueGrades : List Route.RouteData -> Set String
 uniqueGrades routes =
     routes
         |> List.map .grade
+        |> Set.fromList
+
+
+uniqueTags : List Route.RouteData -> Set String
+uniqueTags routes =
+    routes
+        |> List.concatMap .tags
         |> Set.fromList
 
 
@@ -443,11 +450,14 @@ expandRouteColumn =
 viewRouteExpandedSolid : RouteData -> Element.Element Msg
 viewRouteExpandedSolid rd =
     expandRouteColumn
-        [ Element.paragraph [ Element.Font.size 26 ]
+        [ -- Heading
+          Element.paragraph [ Element.Font.size 26 ]
             [ Element.text rd.name
             , Element.el [ Element.Font.color <| Element.rgba 0.5 0.5 0.5 0.5 ] (Element.text " - ")
             , Element.text rd.grade
             ]
+
+        -- Summary of properties
         , Element.column [ Element.spacing 4, Element.Font.size 16 ]
             [ Element.text <| climbTypeToString rd.type_
             , Element.text <| "In " ++ rd.area
@@ -460,12 +470,21 @@ viewRouteExpandedSolid rd =
                         "📝 Not climbed"
                 )
             ]
+
+        -- Tags
+        , viewTags rd.tags
+
+        -- Notes
         , viewSolidNotes rd.notes
+
+        -- Pictures
         , if List.isEmpty rd.images then
             Element.none
 
           else
             viewImages rd.images
+
+        -- Videos
         , if List.isEmpty rd.videos then
             Element.none
 
@@ -482,11 +501,38 @@ viewRouteExpandedSolid rd =
                         ]
                         []
                     ]
+
+        -- Edit button
         , Element.Input.button []
             { onPress = Just <| ButtonPressed (EditRouteButton rd)
             , label = CommonView.actionButtonLabel "Edit"
             }
         ]
+
+
+viewTags : List String -> Element Msg
+viewTags tags =
+    if List.isEmpty tags then
+        Element.none
+
+    else
+        Element.wrappedRow [ Element.spacing 12, Element.padding 20 ]
+            (List.map viewTag tags)
+
+
+gray : Element.Color
+gray =
+    Element.rgb255 130 130 130
+
+
+viewTag : String -> Element Msg
+viewTag tag =
+    Element.el
+        [ Element.Background.color gray
+        , Element.padding 5
+        , Element.Border.rounded 6
+        ]
+        (Element.text tag)
 
 
 viewImages : List String -> Element Msg

@@ -20,6 +20,7 @@ routeObjectDecoder =
         |> Json.Decode.Pipeline.optional "area" Json.Decode.string "Unknown area"
         |> Json.Decode.Pipeline.required "grade" Json.Decode.string
         |> Json.Decode.Pipeline.optional "comments" Json.Decode.string ""
+        |> Json.Decode.Pipeline.optional "tags" (Json.Decode.list Json.Decode.string) []
         |> Json.Decode.Pipeline.optional "tickdate" tickDateDecoder Nothing
         |> Json.Decode.Pipeline.required "type" climbTypeDecoder
         |> Json.Decode.Pipeline.optional "images" (Json.Decode.list Json.Decode.string) []
@@ -56,6 +57,7 @@ encodeRoute route =
          , ( "area", Json.Encode.string route.area )
          , ( "grade", Json.Encode.string route.grade )
          , ( "comments", Json.Encode.string route.notes )
+         , ( "tags", Json.Encode.list Json.Encode.string route.tags )
          , ( "type", Json.Encode.string (Route.climbTypeToString route.type_) )
          , ( "images", Json.Encode.list Json.Encode.string route.images )
          , ( "videos", Json.Encode.list Json.Encode.string route.videos )

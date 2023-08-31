@@ -39,6 +39,7 @@ initialRoutes =
       , grade = "3+"
       , tickDate2 = Nothing
       , notes = "Vilken fest"
+      , tags = []
       , id = Route.RouteId 3
       , area = "Utby"
       , type_ = Route.Trad

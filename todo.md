@@ -3,15 +3,16 @@
 (✅ 🚧 ❌ 🧱)
 
 
+## Bugs
+
+* Tag is filtered on, then that tag is removed from all routes. Now the tag is still selected in the filter model
+
 ## Stats
 
 * Show number of routes total in a graph
 
 ## Login
 
-✅ Show password checkbox
-✅ Submit on enter
-✅ Nicer wrong username/password information
 * Sign up
 * Oauth?
 
@@ -26,7 +27,7 @@
         - Check if link is valid?
         - Show preview?
         - Some other input form?
-* Custom tags per route. Useful for example onsight
+* More visible "This is selected" in filter
 * Video gallery
 * Show number of filtered routes
 * Admin Json in

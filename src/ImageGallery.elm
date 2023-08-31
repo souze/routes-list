@@ -68,7 +68,7 @@ view : Model -> Element Msg
 view model =
     Element.column [ Element.width Element.fill ]
         [ viewBigPicture model
-        , Element.row [ Element.width Element.fill ]
+        , Element.row [ Element.width Element.fill, Element.spacing 12 ]
             [ viewPrevButton
             , viewBackButton
             , viewNextButton

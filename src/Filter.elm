@@ -13,6 +13,7 @@ type alias Model =
     { grade : Set String
     , type_ : Set String
     , tickdate : TickDateFilter
+    , tags : Set String
     }
 
 
@@ -29,6 +30,7 @@ type Msg
     = PressedGradeFilter String
     | PressedTickdateFilter
     | PressedTypeFilter String
+    | PressedTagFilter String
 
 
 initialModel : Model
@@ -36,6 +38,7 @@ initialModel =
     { grade = Set.empty
     , tickdate = ShowAllTickdates
     , type_ = Set.empty
+    , tags = Set.empty
     }
 
 
@@ -50,6 +53,9 @@ update msg model =
 
         PressedTickdateFilter ->
             { model | tickdate = rotateTickdateFilter model.tickdate }
+
+        PressedTagFilter tag ->
+            { model | tags = model.tags |> toggleInSet tag }
 
 
 toggleInSet : comparable -> Set comparable -> Set comparable
@@ -91,6 +97,13 @@ applyCustomFilter filter rd =
     filterGrade filter.grade rd
         && filterTickdate filter.tickdate rd
         && filterType filter.type_ rd
+        && filterTags filter.tags rd
+
+
+filterTags : Set String -> RouteData -> Bool
+filterTags include rd =
+    Set.isEmpty include
+        || not (Set.intersect include (rd.tags |> Set.fromList) |> Set.isEmpty)
 
 
 filterType : Set String -> RouteData -> Bool
@@ -142,14 +155,30 @@ filterGrade filter rd =
 -- View
 
 
-viewFilter : (Msg -> msg) -> Model -> Set String -> Element msg
-viewFilter msgFn model uniqueGrades =
+viewFilter : (Msg -> msg) -> Model -> Set String -> Set String -> Element msg
+viewFilter msgFn model uniqueGrades uniqueTags =
     Element.column [ Element.spacing 5, Element.width Element.fill ]
         [ Element.text "Filters"
         , Element.row [ Element.spacing 10 ] [ Element.text "Type", viewTypeFilter model.type_ |> Element.map msgFn ]
         , Element.row [ Element.spacing 10 ] [ Element.text "Grade", viewGradeFilter model.grade uniqueGrades |> Element.map msgFn ]
         , Element.row [ Element.spacing 10 ] [ Element.text "Tickdate", viewTickdateFilter msgFn model.tickdate ]
+        , Element.row [ Element.spacing 10 ] [ Element.text "Tags", viewTags model.tags uniqueTags |> Element.map msgFn ]
         ]
+
+
+viewTags : Set String -> Set String -> Element Msg
+viewTags selected options =
+    let
+        -- There might be selected tags that are no longer present in the route-list. If a route was edited
+        validSelected =
+            Set.intersect selected options
+
+        sortedTags : List String
+        sortedTags =
+            options |> Set.toList |> List.sort
+    in
+    CommonView.selectMany validSelected sortedTags
+        |> Element.map PressedTagFilter
 
 
 viewTypeFilter : Set String -> Element Msg

@@ -1,6 +1,7 @@
 module Pages.SignIn.SignInDest_ exposing (FieldType(..), Model, Msg(..), page)
 
 import Bridge
+import CommonView
 import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Background
@@ -123,14 +124,14 @@ mainColumn =
 
 viewLogin : Model -> List (Element Msg)
 viewLogin data =
-    [ Element.Input.username [ onEnter ClickedSignIn ]
+    [ Element.Input.username [ CommonView.onEnter ClickedSignIn ]
         { onChange = FieldChanged UsernameField
         , text = data.username
         , placeholder = Nothing
         , label = Element.Input.labelLeft [] (Element.text "Username")
         }
     , Element.row [ Element.spacing 15, Element.width Element.fill ]
-        [ Element.Input.currentPassword [ onEnter ClickedSignIn, Element.width Element.fill ]
+        [ Element.Input.currentPassword [ CommonView.onEnter ClickedSignIn, Element.width Element.fill ]
             { onChange = FieldChanged PasswordField
             , text = data.password
             , placeholder = Nothing
@@ -163,23 +164,6 @@ viewLogin data =
 red : Element.Color
 red =
     Element.rgb255 200 30 30
-
-
-onEnter : msg -> Element.Attribute msg
-onEnter msg =
-    Element.htmlAttribute
-        (Html.Events.on "keyup"
-            (Json.Decode.field "key" Json.Decode.string
-                |> Json.Decode.andThen
-                    (\key ->
-                        if key == "Enter" then
-                            Json.Decode.succeed msg
-
-                        else
-                            Json.Decode.fail "Not the enter key"
-                    )
-            )
-        )
 
 
 actionButtonLabel : String -> Element.Element msg

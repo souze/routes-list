@@ -4,6 +4,8 @@ import Element exposing (Element)
 import Element.Background
 import Element.Input
 import Gen.Route
+import Html.Events
+import Json.Decode
 import List.Extra
 import Route
 import Set exposing (Set)
@@ -129,3 +131,20 @@ selectMany selected options =
             { elementRow = filledButtonRow
             , content = Material.containedButton Material.defaultPalette
             }
+
+
+onEnter : msg -> Element.Attribute msg
+onEnter msg =
+    Element.htmlAttribute
+        (Html.Events.on "keyup"
+            (Json.Decode.field "key" Json.Decode.string
+                |> Json.Decode.andThen
+                    (\key ->
+                        if key == "Enter" then
+                            Json.Decode.succeed msg
+
+                        else
+                            Json.Decode.fail "Not the enter key"
+                    )
+            )
+        )

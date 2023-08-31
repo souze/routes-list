@@ -6,12 +6,15 @@ import Date exposing (Date)
 import DatePicker
 import Element exposing (Element)
 import Element.Background
+import Element.Border
 import Element.Input
 import Gen.Params.NewRoute exposing (Params)
 import Gen.Route
 import Lamdera
+import List.Extra
 import Request exposing (Request)
 import Route exposing (CommonRouteData, NewRouteData, RouteData)
+import Set
 import View exposing (View)
 
 
@@ -20,6 +23,7 @@ type alias Model =
     , datePickerModel : DatePicker.Model
     , datePickerText : String
     , picturesText : String
+    , tagText : String
     }
 
 
@@ -29,6 +33,7 @@ init currentDate initialData =
     , datePickerModel = DatePicker.initWithToday currentDate
     , datePickerText = ""
     , picturesText = initialPicturesText initialData.images
+    , tagText = ""
     }
 
 
@@ -44,6 +49,8 @@ initialPicturesText data =
 type Msg
     = FieldUpdated String String
     | DatePickerUpdate DatePicker.ChangeEvent
+    | AddTagPressed String
+    | RemoveTagPressed String
 
 
 update : Msg -> Model -> Model
@@ -58,10 +65,45 @@ update msg model =
 
                     else
                         model.picturesText
+                , tagText =
+                    if fieldName == "tag" then
+                        newValue
+
+                    else
+                        model.tagText
             }
 
         DatePickerUpdate event ->
             updateDatePicker event model
+
+        AddTagPressed text ->
+            { model
+                | route = addTag text model.route
+                , tagText = ""
+            }
+
+        RemoveTagPressed text ->
+            { model | route = removeTag text model.route }
+
+
+removeTag : String -> NewRouteData -> NewRouteData
+removeTag tag rd =
+    { rd
+        | tags =
+            rd.tags
+                |> List.Extra.remove tag
+    }
+
+
+addTag : String -> NewRouteData -> NewRouteData
+addTag tag rd =
+    { rd
+        | tags =
+            rd.tags
+                |> Set.fromList
+                |> Set.insert tag
+                |> Set.toList
+    }
 
 
 updateDatePicker : DatePicker.ChangeEvent -> Model -> Model
@@ -216,9 +258,53 @@ view model =
         , onelineEdit "grade" "Grade" model.route.grade
         , climbTypeSelect model
         , tickdatePicker model
+        , viewTags model.tagText model.route.tags
         , pictures model.picturesText
         , notesField model.route.notes
         ]
+
+
+viewTags : String -> List String -> Element Msg
+viewTags text existingTags =
+    Element.column [ Element.spacing 12 ]
+        [ Element.wrappedRow [ Element.spacing 12, Element.width Element.fill ]
+            [ Element.Input.text [ Element.width Element.fill, CommonView.onEnter (AddTagPressed text) ]
+                { onChange = FieldUpdated "tag"
+                , text = text
+                , placeholder = Just <| placeholderText "New tag"
+                , label = Element.Input.labelLeft [] (Element.text "Tag")
+                }
+            , CommonView.buttonToSendEvent "Add" (AddTagPressed text)
+            ]
+        , viewExistingTags existingTags
+        ]
+
+
+viewExistingTags : List String -> Element Msg
+viewExistingTags tags =
+    if List.isEmpty tags then
+        Element.none
+
+    else
+        Element.wrappedRow [ Element.spacing 12, Element.padding 20 ]
+            (List.map viewExistingTag tags)
+
+
+gray : Element.Color
+gray =
+    Element.rgb255 130 130 130
+
+
+viewExistingTag : String -> Element Msg
+viewExistingTag tag =
+    Element.Input.button
+        [ Element.Background.color gray
+        , Element.padding 5
+        , Element.Border.rounded 6
+        ]
+        { label = Element.text tag
+        , onPress = Just <| RemoveTagPressed tag
+        }
 
 
 placeholderText : String -> Element.Input.Placeholder Msg
