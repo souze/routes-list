@@ -140,10 +140,10 @@ viewLogin data =
             }
         , Element.text
             (if data.showPassword then
-                "Hide password"
+                "Hide"
 
              else
-                "Show password"
+                "Show"
             )
         , Widget.switch (Widget.Material.switch Widget.Material.defaultPalette)
             { description = "Show password"

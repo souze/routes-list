@@ -28,6 +28,7 @@
             "justinmimbs/date": "3.2.1",
             "lamdera/codecs": "1.0.0",
             "lamdera/core": "1.0.0",
+            "marshallformula/elm-swiper": "1.0.2",
             "mdgriffith/elm-ui": "1.1.8",
             "rl-king/elm-gallery": "2.0.0",
             "ryannhg/date-format": "2.3.0",
