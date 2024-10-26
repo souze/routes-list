@@ -16,9 +16,9 @@ import Widget.Material as Material
 header : Element msg
 header =
     Element.row [ Element.spacing 10 ]
-        [ linkToRoute "Wishlist" <| Gen.Route.Routes__Filter_ { filter = "wishlist" }
-        , linkToRoute "Log" <| Gen.Route.Routes__Filter_ { filter = "log" }
-        , linkToRoute "All" <| Gen.Route.Routes__Filter_ { filter = "all" }
+        [ linkToRoute "Log" <| Gen.Route.Routes__Filter_ { filter = "log" }
+        , linkToRoute "Wishlist" <| Gen.Route.Routes__Filter_ { filter = "wishlist" }
+        , linkToRoute "+" <| Gen.Route.NewRoute
         , linkToRoute "..." <| Gen.Route.MoreOptions
         ]
 

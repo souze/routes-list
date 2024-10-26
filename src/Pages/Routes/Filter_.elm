@@ -87,14 +87,11 @@ init req _ =
         filter : Maybe Filter
         filter =
             case req.params.filter of
-                "all" ->
-                    Just { filter = initialAllFilter, sorter = Sorter.initialModel }
+                "log" ->
+                    Just { filter = { initialAllFilter | tickdate = Filter.ShowHasTickdate }, sorter = Sorter.initialModel }
 
                 "wishlist" ->
                     Just { filter = { initialAllFilter | tickdate = Filter.ShowWithoutTickdate }, sorter = Sorter.initialModel }
-
-                "log" ->
-                    Just { filter = { initialAllFilter | tickdate = Filter.ShowHasTickdate }, sorter = Sorter.initialModel }
 
                 _ ->
                     Nothing
@@ -115,7 +112,7 @@ init req _ =
               , metadatas = Dict.empty
               , galleryModel = Nothing
               }
-            , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
+            , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "log" }) req
             )
 
 
