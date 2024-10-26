@@ -3,6 +3,7 @@ module Backend exposing (..)
 import BackendMsg
 import BackupModel
 import Bridge exposing (..)
+import ClimbRoute exposing (..)
 import Dict exposing (Dict)
 import Element.Input exposing (username)
 import Element.Region exposing (announce)
@@ -11,7 +12,6 @@ import Lamdera exposing (ClientId, SessionId)
 import List.Extra
 import Maybe.Extra
 import Process
-import Route exposing (..)
 import SHA1
 import Task
 import Time

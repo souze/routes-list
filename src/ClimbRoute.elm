@@ -1,4 +1,4 @@
-module Route exposing (..)
+module ClimbRoute exposing (..)
 
 import Date
 import List.Extra

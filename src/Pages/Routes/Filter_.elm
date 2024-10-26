@@ -30,16 +30,14 @@ import View exposing (View)
 import Widget
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
-    Page.protected.element
-        (\_ ->
-            { init = init req shared
-            , update = update shared req
-            , view = view shared
-            , subscriptions = subscriptions
-            }
-        )
+page : Auth.User -> Shared.Model -> Route { filter : String } -> Page Model Msg
+page user shared route =
+    Page.new
+        { init = init route shared
+        , update = update shared route
+        , view = view shared
+        , subscriptions = \_ -> Sub.none
+        }
 
 
 

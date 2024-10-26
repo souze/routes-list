@@ -8,16 +8,14 @@ import Shared
 import View exposing (View)
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
-    Page.protected.element
-        (\_ ->
-            { init = init req
-            , update = update
-            , view = view
-            , subscriptions = subscriptions
-            }
-        )
+page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
+page user model route =
+    Page.new
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = \_ -> Sub.none
+        }
 
 
 

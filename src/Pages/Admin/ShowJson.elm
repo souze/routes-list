@@ -1,31 +1,28 @@
 module Pages.Admin.ShowJson exposing (Model, Msg(..), page)
 
+import Auth
 import BackupModel
 import Bridge
+import ClimbRoute exposing (RouteData)
 import CommonView
 import Element exposing (Element)
 import Evergreen.V3.Types exposing (BackupModel)
-import Gen.Params.Admin.ShowJson exposing (Params)
 import Json.Encode
 import JsonRoute
 import Lamdera
 import Page
-import Request
-import Route exposing (RouteData)
 import Shared
 import View exposing (View)
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
-    Page.protected.element
-        (\_ ->
-            { init = init
-            , update = update
-            , view = view
-            , subscriptions = \_ -> Sub.none
-            }
-        )
+page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
+page user model route =
+    Page.new
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = \_ -> Sub.none
+        }
 
 
 

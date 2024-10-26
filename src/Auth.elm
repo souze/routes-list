@@ -1,6 +1,6 @@
 module Auth exposing
     ( User
-    , beforeProtectedInit
+    , onPageLoad, viewCustomPage
     )
 
 {-|
@@ -10,9 +10,9 @@ module Auth exposing
 
 -}
 
+import Auth.Action
 import ElmSpa.Page as ElmSpa
-import Gen.Route exposing (Route)
-import Request exposing (Request)
+import Route
 import Shared
 
 
@@ -20,6 +20,21 @@ import Shared
 -}
 type alias User =
     Shared.User
+
+
+viewCustomPage : Shared.Model -> Route () -> View Never
+viewCustomPage shared route =
+    case shared.user of
+        Just user ->
+            case route.url.path of
+                "profile" ->
+                    Html.text "Profile"
+
+                _ ->
+                    Html.text "Not Found"
+
+        Nothing ->
+            Html.text "Not Found"
 
 
 {-| This function will run before any `protected` pages.
@@ -34,11 +49,21 @@ Here, you can provide logic on where to redirect if a user is not signed in. Her
             ElmSpa.RedirectTo Gen.Route.SignIn
 
 -}
-beforeProtectedInit : Shared.Model -> Request -> ElmSpa.Protected User Route
-beforeProtectedInit shared req =
+onPageLoad : Shared.Model -> Route () -> Auth.Action.Action User
+onPageLoad shared route =
     case shared.user of
-        Just user ->
-            ElmSpa.Provide user
+        Just token ->
+            Auth.Action.loadPageWithUser Shared.NormalUser
 
         Nothing ->
-            ElmSpa.RedirectTo <| Gen.Route.SignIn__SignInDest_ { signInDest = req.url.path |> String.replace "/" "_" }
+            Auth.Action.pushRoute
+                { path = Route.Path.SignIn
+                , query = Dict.fromList [ ( "from", route.url.path ) ]
+                , hash = Nothing
+                }
+
+
+
+--     ElmSpa.RedirectTo
+-- <|
+--     Gen.Route.SignIn__SignInDest_ { signInDest = req.url.path |> String.replace "/" "_" }

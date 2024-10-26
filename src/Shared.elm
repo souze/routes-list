@@ -1,11 +1,11 @@
 module Shared exposing (..)
 
+import ClimbRoute exposing (..)
 import Date exposing (Date)
 import Element exposing (..)
 import Element.Region as Region
-import Gen.Route
-import Request exposing (Request)
-import Route exposing (..)
+import Json.Decode
+import Route
 import Task
 import Time
 import Url exposing (Url)
@@ -22,7 +22,7 @@ type alias Flags =
 
 
 type alias Model =
-    { routes : List Route.RouteData
+    { routes : List RouteData
     , user : Maybe User
     , currentDate : Date
     }
@@ -33,23 +33,32 @@ type User
     | AdminUser
 
 
-initialRoutes : List Route.RouteData
+decoder : Json.Decode.Decoder Flags
+decoder =
+    Debug.todo "decoder"
+
+
+ecoderinitialRoutes : List RouteData
+ecoderinitialRoutes =
+    Debug.todo "initialRoutes"
+
+
 initialRoutes =
     [ { name = "Bokus Dokus"
       , grade = "3+"
       , tickDate2 = Nothing
       , notes = "Vilken fest"
       , tags = []
-      , id = Route.RouteId 3
+      , id = ClimbRoute.RouteId 3
       , area = "Utby"
-      , type_ = Route.Trad
+      , type_ = ClimbRoute.Trad
       , images = []
       , videos = [ "https://filedn.com/looL0p0cbRa5gF0z3SS8rBb/route_list/20200408_175256.mp4" ]
       }
     ]
 
 
-init : Request -> Flags -> ( Model, Cmd Msg )
+init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
 init _ _ =
     ( { routes = initialRoutes
       , user = Nothing
@@ -75,7 +84,7 @@ type Msg
     | SetCurrentDate Date
 
 
-update : Request -> Msg -> Model -> ( Model, Cmd Msg )
+update : Route () -> Msg -> Model -> ( Model, Effect Msg )
 update req msg model =
     case msg of
         Noop ->
@@ -89,13 +98,13 @@ update req msg model =
                 , user = Just NormalUser
               }
             , case req.route of
-                Gen.Route.SignIn__SignInDest_ { signInDest } ->
+                Route.SignIn__SignInDest_ { signInDest } ->
                     let
                         requestUrl =
                             req.url
 
                         signinRoute =
-                            Gen.Route.fromUrl { requestUrl | path = String.replace "_" "/" signInDest }
+                            Route.fromUrl { requestUrl | path = String.replace "_" "/" signInDest }
                     in
                     Request.pushRoute signinRoute req
 
@@ -105,7 +114,7 @@ update req msg model =
 
         MsgFromBackend YouAreAdmin ->
             ( { model | user = Just AdminUser }
-            , Request.pushRoute Gen.Route.Admin__Home_ req
+            , Request.pushRoute Route.Admin__Home_ req
             )
 
         MsgFromBackend LogOut ->
@@ -119,7 +128,7 @@ update req msg model =
             )
 
 
-subscriptions : Request -> Model -> Sub Msg
+subscriptions : Route () -> Model -> Sub Msg
 subscriptions _ _ =
     Sub.none
 

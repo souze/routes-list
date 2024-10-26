@@ -8,7 +8,6 @@ import Browser.Navigation exposing (Key)
 import Date exposing (Date)
 import DatePicker
 import Dict exposing (Dict)
-import Gen.Pages as Pages
 import Lamdera
 import Route exposing (..)
 import Shared

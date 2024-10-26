@@ -1,9 +1,9 @@
 module CommonView exposing (..)
 
+import ClimbRoute
 import Element exposing (Element)
 import Element.Background
 import Element.Input
-import Gen.Route
 import Html.Events
 import Json.Decode
 import List.Extra
@@ -16,17 +16,17 @@ import Widget.Material as Material
 header : Element msg
 header =
     Element.row [ Element.spacing 10 ]
-        [ linkToRoute "Log" <| Gen.Route.Routes__Filter_ { filter = "log" }
-        , linkToRoute "Wishlist" <| Gen.Route.Routes__Filter_ { filter = "wishlist" }
-        , linkToRoute "+" <| Gen.Route.NewRoute
-        , linkToRoute "..." <| Gen.Route.MoreOptions
+        [ linkToRoute "Log" <| Route.Routes__Filter_ { filter = "log" }
+        , linkToRoute "Wishlist" <| Route.Routes__Filter_ { filter = "wishlist" }
+        , linkToRoute "+" <| Route.NewRoute
+        , linkToRoute "..." <| Route.MoreOptions
         ]
 
 
-linkToRoute : String -> Gen.Route.Route -> Element msg
+linkToRoute : String -> Route.Route -> Element msg
 linkToRoute labelText route =
     Element.link []
-        { url = Gen.Route.toHref route
+        { url = Route.toHref route
         , label = actionButtonLabel labelText
         }
 
@@ -57,7 +57,7 @@ buttonToSendEvent labelText event =
 adminPageWithItems : List (Element msg) -> Element msg
 adminPageWithItems items =
     mainColumn
-        (linkToRoute "Home" Gen.Route.Admin__Home_
+        (linkToRoute "Home" Route.Admin__Home_
             :: items
         )
 

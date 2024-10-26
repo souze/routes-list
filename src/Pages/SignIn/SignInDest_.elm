@@ -7,25 +7,23 @@ import Element exposing (Element)
 import Element.Background
 import Element.Font
 import Element.Input
-import Gen.Params.SignIn.SignInDest_ exposing (Params)
 import Html.Events
 import Json.Decode
 import Lamdera
 import Page
-import Request
 import Shared
 import View exposing (View)
 import Widget
 import Widget.Material
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
-    Page.advanced
+page : Shared.Model -> Route { signInDest : String } -> Page Model Msg
+page model route =
+    Page.new
         { init = init
         , update = update
         , view = view
-        , subscriptions = subscriptions
+        , subscriptions = \_ -> Sub.none
         }
 
 
