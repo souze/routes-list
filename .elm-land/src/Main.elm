@@ -26,7 +26,7 @@ import Pages.MoreOptions
 import Pages.NewRoute
 import Pages.OutputJson
 import Pages.Routes.Filter_
-import Pages.SignIn.SignInDest_
+import Pages.SignIn
 import Pages.Stats
 import Pages.NotFound_
 import Pages.NotFound_
@@ -345,19 +345,19 @@ initPageAndLayout model =
                     }
                 )
 
-        Route.Path.SignIn_SignInDest_ params ->
+        Route.Path.SignIn ->
             let
-                page : Page.Page Pages.SignIn.SignInDest_.Model Pages.SignIn.SignInDest_.Msg
+                page : Page.Page Pages.SignIn.Model Pages.SignIn.Msg
                 page =
-                    Pages.SignIn.SignInDest_.page model.shared (Route.fromUrl params model.url)
+                    Pages.SignIn.page model.shared (Route.fromUrl () model.url)
 
                 ( pageModel, pageEffect ) =
                     Page.init page ()
             in
             { page = 
                 Tuple.mapBoth
-                    (Main.Pages.Model.SignIn_SignInDest_ params)
-                    (Effect.map Main.Pages.Msg.SignIn_SignInDest_ >> fromPageEffect model)
+                    Main.Pages.Model.SignIn
+                    (Effect.map Main.Pages.Msg.SignIn >> fromPageEffect model)
                     ( pageModel, pageEffect )
             , layout = Nothing
             }
@@ -730,11 +730,11 @@ updateFromPage msg model =
                         (Page.update (Pages.Routes.Filter_.page user model.shared (Route.fromUrl params model.url)) pageMsg pageModel)
                 )
 
-        ( Main.Pages.Msg.SignIn_SignInDest_ pageMsg, Main.Pages.Model.SignIn_SignInDest_ params pageModel ) ->
+        ( Main.Pages.Msg.SignIn pageMsg, Main.Pages.Model.SignIn pageModel ) ->
             Tuple.mapBoth
-                (Main.Pages.Model.SignIn_SignInDest_ params)
-                (Effect.map Main.Pages.Msg.SignIn_SignInDest_ >> fromPageEffect model)
-                (Page.update (Pages.SignIn.SignInDest_.page model.shared (Route.fromUrl params model.url)) pageMsg pageModel)
+                Main.Pages.Model.SignIn
+                (Effect.map Main.Pages.Msg.SignIn >> fromPageEffect model)
+                (Page.update (Pages.SignIn.page model.shared (Route.fromUrl () model.url)) pageMsg pageModel)
 
         ( Main.Pages.Msg.Stats pageMsg, Main.Pages.Model.Stats pageModel ) ->
             runWhenAuthenticated
@@ -847,11 +847,11 @@ toLayoutFromPage model =
                 |> Maybe.andThen (Page.layout pageModel)
                 |> Maybe.map (Layouts.map (Main.Pages.Msg.Routes_Filter_ >> Page))
 
-        Main.Pages.Model.SignIn_SignInDest_ params pageModel ->
-            Route.fromUrl params model.url
-                |> Pages.SignIn.SignInDest_.page model.shared
+        Main.Pages.Model.SignIn pageModel ->
+            Route.fromUrl () model.url
+                |> Pages.SignIn.page model.shared
                 |> Page.layout pageModel
-                |> Maybe.map (Layouts.map (Main.Pages.Msg.SignIn_SignInDest_ >> Page))
+                |> Maybe.map (Layouts.map (Main.Pages.Msg.SignIn >> Page))
 
         Main.Pages.Model.Stats pageModel ->
             Route.fromUrl () model.url
@@ -1018,9 +1018,9 @@ subscriptions model =
                         )
                         (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
 
-                Main.Pages.Model.SignIn_SignInDest_ params pageModel ->
-                    Page.subscriptions (Pages.SignIn.SignInDest_.page model.shared (Route.fromUrl params model.url)) pageModel
-                        |> Sub.map Main.Pages.Msg.SignIn_SignInDest_
+                Main.Pages.Model.SignIn pageModel ->
+                    Page.subscriptions (Pages.SignIn.page model.shared (Route.fromUrl () model.url)) pageModel
+                        |> Sub.map Main.Pages.Msg.SignIn
                         |> Sub.map Page
 
                 Main.Pages.Model.Stats pageModel ->
@@ -1199,9 +1199,9 @@ viewPage model =
                 )
                 (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
 
-        Main.Pages.Model.SignIn_SignInDest_ params pageModel ->
-            Page.view (Pages.SignIn.SignInDest_.page model.shared (Route.fromUrl params model.url)) pageModel
-                |> View.map Main.Pages.Msg.SignIn_SignInDest_
+        Main.Pages.Model.SignIn pageModel ->
+            Page.view (Pages.SignIn.page model.shared (Route.fromUrl () model.url)) pageModel
+                |> View.map Main.Pages.Msg.SignIn
                 |> View.map Page
 
         Main.Pages.Model.Stats pageModel ->
@@ -1402,9 +1402,9 @@ toPageUrlHookCmd model routes =
                 )
                 (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
 
-        Main.Pages.Model.SignIn_SignInDest_ params pageModel ->
-            Page.toUrlMessages routes (Pages.SignIn.SignInDest_.page model.shared (Route.fromUrl params model.url)) 
-                |> List.map Main.Pages.Msg.SignIn_SignInDest_
+        Main.Pages.Model.SignIn pageModel ->
+            Page.toUrlMessages routes (Pages.SignIn.page model.shared (Route.fromUrl () model.url)) 
+                |> List.map Main.Pages.Msg.SignIn
                 |> List.map Page
                 |> toCommands
 
@@ -1510,7 +1510,7 @@ isAuthProtected routePath =
         Route.Path.Routes_Filter_ _ ->
             True
 
-        Route.Path.SignIn_SignInDest_ _ ->
+        Route.Path.SignIn ->
             False
 
         Route.Path.Stats ->

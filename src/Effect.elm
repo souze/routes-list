@@ -100,6 +100,7 @@ pushRoute :
     -> Effect msg
 pushRoute route =
     PushUrl (Route.toString route)
+        |> Debug.log "pushRoute"
 
 
 {-| Same as `Effect.pushRoute`, but without `query` or `hash` support
@@ -107,6 +108,7 @@ pushRoute route =
 pushRoutePath : Route.Path.Path -> Effect msg
 pushRoutePath path =
     PushUrl (Route.Path.toString path)
+        |> Debug.log "pushRoutePath"
 
 
 {-| Set the new route, but replace the previous one, so clicking the back
@@ -120,6 +122,7 @@ replaceRoute :
     -> Effect msg
 replaceRoute route =
     ReplaceUrl (Route.toString route)
+        |> Debug.log "replaceRoute"
 
 
 {-| Same as `Effect.replaceRoute`, but without `query` or `hash` support
@@ -127,6 +130,7 @@ replaceRoute route =
 replaceRoutePath : Route.Path.Path -> Effect msg
 replaceRoutePath path =
     ReplaceUrl (Route.Path.toString path)
+        |> Debug.log "replaceRoutePath"
 
 
 {-| Redirect users to a new URL, somewhere external to your web application.
@@ -134,6 +138,7 @@ replaceRoutePath path =
 loadExternalUrl : String -> Effect msg
 loadExternalUrl =
     LoadExternalUrl
+        |> Debug.log "loadExternalUrl"
 
 
 {-| Navigate back one page

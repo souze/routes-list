@@ -10,9 +10,9 @@ import View exposing (View)
 
 
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
-page user model route =
+page user shared route =
     Page.new
-        { init = \_ -> init
+        { init = \_ -> init shared
         , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
@@ -27,10 +27,12 @@ type alias Model =
     {}
 
 
-init : ( Model, Effect Msg )
-init =
+init : Shared.Model -> ( Model, Effect Msg )
+init shared =
     ( {}
-    , Effect.pushRoutePath <| Route.Path.SignIn_SignInDest_ { signInDest = "_" }
+      -- , Effect.none
+    , Effect.pushRoutePath <|
+        Route.Path.Routes_Filter_ { filter = "log" }
     )
 
 

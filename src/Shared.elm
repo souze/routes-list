@@ -93,17 +93,17 @@ update route msg model =
                 , user = Just NormalUser
               }
             , case route.path of
-                Route.Path.SignIn_SignInDest_ { signInDest } ->
+                Route.Path.SignIn ->
                     let
-                        requestUrl =
-                            route.url
-
-                        signinRoute =
-                            Route.fromUrl { requestUrl | path = String.replace "_" "/" signInDest }
+                        dest =
+                            route.query
+                                |> Dict.get "from"
+                                |> Maybe.andThen Route.Path.fromString
+                                |> Maybe.withDefault Route.Path.Home_
                     in
                     Effect.pushRoute
-                        { path = route.path
-                        , hash = Nothing
+                        { hash = Nothing
+                        , path = dest
                         , query = Dict.empty
                         }
 

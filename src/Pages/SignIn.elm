@@ -1,4 +1,4 @@
-module Pages.SignIn.SignInDest_ exposing (FieldType(..), Model, Msg(..), page)
+module Pages.SignIn exposing (FieldType(..), Model, Msg(..), page)
 
 import Bridge
 import CommonView
@@ -13,15 +13,16 @@ import Lamdera
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
+import Shared.Model
 import View exposing (View)
 import Widget
 import Widget.Material
 
 
-page : Shared.Model -> Route { signInDest : String } -> Page Model Msg
-page model route =
+page : Shared.Model -> Route () -> Page Model Msg
+page shared route =
     Page.new
-        { init = \_ -> init
+        { init = \_ -> init shared
         , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
@@ -40,8 +41,8 @@ type alias Model =
     }
 
 
-init : ( Model, Effect Msg )
-init =
+init : Shared.Model.Model -> ( Model, Effect Msg )
+init shared =
     ( { username = ""
       , password = ""
       , showPassword = False

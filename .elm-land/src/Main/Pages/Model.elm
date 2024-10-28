@@ -12,7 +12,7 @@ import Pages.MoreOptions
 import Pages.NewRoute
 import Pages.OutputJson
 import Pages.Routes.Filter_
-import Pages.SignIn.SignInDest_
+import Pages.SignIn
 import Pages.Stats
 import Pages.NotFound_
 import View exposing (View)
@@ -31,7 +31,7 @@ type Model
     | NewRoute Pages.NewRoute.Model
     | OutputJson Pages.OutputJson.Model
     | Routes_Filter_ { filter : String } Pages.Routes.Filter_.Model
-    | SignIn_SignInDest_ { signInDest : String } Pages.SignIn.SignInDest_.Model
+    | SignIn Pages.SignIn.Model
     | Stats Pages.Stats.Model
     | NotFound_ Pages.NotFound_.Model
     | Redirecting_

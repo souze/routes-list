@@ -61,8 +61,8 @@ onPageLoad shared route =
 
         Nothing ->
             Auth.Action.pushRoute
-                { path = Route.Path.SignIn_SignInDest_ { signInDest = route.url.path }
-                , query = Dict.fromList [ ( "from", route.url.path ) ]
+                { path = Route.Path.SignIn
+                , query = Dict.fromList [ ( "from", Route.toString route ) ]
                 , hash = Nothing
                 }
 

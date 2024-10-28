@@ -19,7 +19,7 @@ type Path
     | NewRoute
     | OutputJson
     | Routes_Filter_ { filter : String }
-    | SignIn_SignInDest_ { signInDest : String }
+    | SignIn
     | Stats
     | NotFound_
 
@@ -79,11 +79,8 @@ fromString urlPath =
                 }
                 |> Just
 
-        "sign-in" :: signInDest_ :: [] ->
-            SignIn_SignInDest_
-                { signInDest = signInDest_
-                }
-                |> Just
+        "sign-in" :: [] ->
+            Just SignIn
 
         "stats" :: [] ->
             Just Stats
@@ -139,8 +136,8 @@ toString path =
                 Routes_Filter_ params ->
                     [ "routes", params.filter ]
 
-                SignIn_SignInDest_ params ->
-                    [ "sign-in", params.signInDest ]
+                SignIn ->
+                    [ "sign-in" ]
 
                 Stats ->
                     [ "stats" ]

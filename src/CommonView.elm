@@ -27,7 +27,7 @@ header =
 linkToRoute : String -> Route.Path.Path -> Element msg
 linkToRoute labelText route =
     Element.link []
-        { url = "routeToString implemented not yet"
+        { url = Route.Path.toString route
         , label = actionButtonLabel labelText
         }
 

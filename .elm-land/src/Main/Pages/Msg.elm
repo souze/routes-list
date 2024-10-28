@@ -12,7 +12,7 @@ import Pages.MoreOptions
 import Pages.NewRoute
 import Pages.OutputJson
 import Pages.Routes.Filter_
-import Pages.SignIn.SignInDest_
+import Pages.SignIn
 import Pages.Stats
 import Pages.NotFound_
 
@@ -30,6 +30,6 @@ type Msg
     | NewRoute Pages.NewRoute.Msg
     | OutputJson Pages.OutputJson.Msg
     | Routes_Filter_ Pages.Routes.Filter_.Msg
-    | SignIn_SignInDest_ Pages.SignIn.SignInDest_.Msg
+    | SignIn Pages.SignIn.Msg
     | Stats Pages.Stats.Msg
     | NotFound_ Pages.NotFound_.Msg
