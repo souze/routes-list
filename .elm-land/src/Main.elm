@@ -15,11 +15,11 @@ import Main.Pages.Model
 import Main.Pages.Msg
 import Page
 import Pages.Home_
+import Pages.Admin
 import Pages.Admin.AddUser
 import Pages.Admin.ChangePassword
 import Pages.Admin.RemoveUser
 import Pages.Admin.ShowJson
-import Pages.Admin.Home_
 import Pages.ChangePassword
 import Pages.InputJson
 import Pages.MoreOptions
@@ -114,6 +114,27 @@ initPageAndLayout model =
                     }
                 )
 
+        Route.Path.Admin ->
+            runWhenAuthenticatedWithLayout
+                model
+                (\user ->
+                    let
+                        page : Page.Page Pages.Admin.Model Pages.Admin.Msg
+                        page =
+                            Pages.Admin.page user model.shared (Route.fromUrl () model.url)
+
+                        ( pageModel, pageEffect ) =
+                            Page.init page ()
+                    in
+                    { page = 
+                        Tuple.mapBoth
+                            Main.Pages.Model.Admin
+                            (Effect.map Main.Pages.Msg.Admin >> fromPageEffect model)
+                            ( pageModel, pageEffect )
+                    , layout = Nothing
+                    }
+                )
+
         Route.Path.Admin_AddUser ->
             runWhenAuthenticatedWithLayout
                 model
@@ -193,27 +214,6 @@ initPageAndLayout model =
                         Tuple.mapBoth
                             Main.Pages.Model.Admin_ShowJson
                             (Effect.map Main.Pages.Msg.Admin_ShowJson >> fromPageEffect model)
-                            ( pageModel, pageEffect )
-                    , layout = Nothing
-                    }
-                )
-
-        Route.Path.Admin_Home_ ->
-            runWhenAuthenticatedWithLayout
-                model
-                (\user ->
-                    let
-                        page : Page.Page Pages.Admin.Home_.Model Pages.Admin.Home_.Msg
-                        page =
-                            Pages.Admin.Home_.page user model.shared (Route.fromUrl () model.url)
-
-                        ( pageModel, pageEffect ) =
-                            Page.init page ()
-                    in
-                    { page = 
-                        Tuple.mapBoth
-                            Main.Pages.Model.Admin_Home_
-                            (Effect.map Main.Pages.Msg.Admin_Home_ >> fromPageEffect model)
                             ( pageModel, pageEffect )
                     , layout = Nothing
                     }
@@ -620,6 +620,16 @@ updateFromPage msg model =
                         (Page.update (Pages.Home_.page user model.shared (Route.fromUrl () model.url)) pageMsg pageModel)
                 )
 
+        ( Main.Pages.Msg.Admin pageMsg, Main.Pages.Model.Admin pageModel ) ->
+            runWhenAuthenticated
+                model
+                (\user ->
+                    Tuple.mapBoth
+                        Main.Pages.Model.Admin
+                        (Effect.map Main.Pages.Msg.Admin >> fromPageEffect model)
+                        (Page.update (Pages.Admin.page user model.shared (Route.fromUrl () model.url)) pageMsg pageModel)
+                )
+
         ( Main.Pages.Msg.Admin_AddUser pageMsg, Main.Pages.Model.Admin_AddUser pageModel ) ->
             runWhenAuthenticated
                 model
@@ -658,16 +668,6 @@ updateFromPage msg model =
                         Main.Pages.Model.Admin_ShowJson
                         (Effect.map Main.Pages.Msg.Admin_ShowJson >> fromPageEffect model)
                         (Page.update (Pages.Admin.ShowJson.page user model.shared (Route.fromUrl () model.url)) pageMsg pageModel)
-                )
-
-        ( Main.Pages.Msg.Admin_Home_ pageMsg, Main.Pages.Model.Admin_Home_ pageModel ) ->
-            runWhenAuthenticated
-                model
-                (\user ->
-                    Tuple.mapBoth
-                        Main.Pages.Model.Admin_Home_
-                        (Effect.map Main.Pages.Msg.Admin_Home_ >> fromPageEffect model)
-                        (Page.update (Pages.Admin.Home_.page user model.shared (Route.fromUrl () model.url)) pageMsg pageModel)
                 )
 
         ( Main.Pages.Msg.ChangePassword pageMsg, Main.Pages.Model.ChangePassword pageModel ) ->
@@ -781,6 +781,12 @@ toLayoutFromPage model =
                 |> Maybe.andThen (Page.layout pageModel)
                 |> Maybe.map (Layouts.map (Main.Pages.Msg.Home_ >> Page))
 
+        Main.Pages.Model.Admin pageModel ->
+            Route.fromUrl () model.url
+                |> toAuthProtectedPage model Pages.Admin.page
+                |> Maybe.andThen (Page.layout pageModel)
+                |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin >> Page))
+
         Main.Pages.Model.Admin_AddUser pageModel ->
             Route.fromUrl () model.url
                 |> toAuthProtectedPage model Pages.Admin.AddUser.page
@@ -804,12 +810,6 @@ toLayoutFromPage model =
                 |> toAuthProtectedPage model Pages.Admin.ShowJson.page
                 |> Maybe.andThen (Page.layout pageModel)
                 |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin_ShowJson >> Page))
-
-        Main.Pages.Model.Admin_Home_ pageModel ->
-            Route.fromUrl () model.url
-                |> toAuthProtectedPage model Pages.Admin.Home_.page
-                |> Maybe.andThen (Page.layout pageModel)
-                |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin_Home_ >> Page))
 
         Main.Pages.Model.ChangePassword pageModel ->
             Route.fromUrl () model.url
@@ -919,6 +919,15 @@ subscriptions model =
                         )
                         (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
 
+                Main.Pages.Model.Admin pageModel ->
+                    Auth.Action.subscriptions
+                        (\user ->
+                            Page.subscriptions (Pages.Admin.page user model.shared (Route.fromUrl () model.url)) pageModel
+                                |> Sub.map Main.Pages.Msg.Admin
+                                |> Sub.map Page
+                        )
+                        (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
+
                 Main.Pages.Model.Admin_AddUser pageModel ->
                     Auth.Action.subscriptions
                         (\user ->
@@ -951,15 +960,6 @@ subscriptions model =
                         (\user ->
                             Page.subscriptions (Pages.Admin.ShowJson.page user model.shared (Route.fromUrl () model.url)) pageModel
                                 |> Sub.map Main.Pages.Msg.Admin_ShowJson
-                                |> Sub.map Page
-                        )
-                        (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
-
-                Main.Pages.Model.Admin_Home_ pageModel ->
-                    Auth.Action.subscriptions
-                        (\user ->
-                            Page.subscriptions (Pages.Admin.Home_.page user model.shared (Route.fromUrl () model.url)) pageModel
-                                |> Sub.map Main.Pages.Msg.Admin_Home_
                                 |> Sub.map Page
                         )
                         (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
@@ -1100,6 +1100,15 @@ viewPage model =
                 )
                 (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
 
+        Main.Pages.Model.Admin pageModel ->
+            Auth.Action.view (View.map never (Auth.viewCustomPage model.shared (Route.fromUrl () model.url)))
+                (\user ->
+                    Page.view (Pages.Admin.page user model.shared (Route.fromUrl () model.url)) pageModel
+                        |> View.map Main.Pages.Msg.Admin
+                        |> View.map Page
+                )
+                (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
+
         Main.Pages.Model.Admin_AddUser pageModel ->
             Auth.Action.view (View.map never (Auth.viewCustomPage model.shared (Route.fromUrl () model.url)))
                 (\user ->
@@ -1132,15 +1141,6 @@ viewPage model =
                 (\user ->
                     Page.view (Pages.Admin.ShowJson.page user model.shared (Route.fromUrl () model.url)) pageModel
                         |> View.map Main.Pages.Msg.Admin_ShowJson
-                        |> View.map Page
-                )
-                (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
-
-        Main.Pages.Model.Admin_Home_ pageModel ->
-            Auth.Action.view (View.map never (Auth.viewCustomPage model.shared (Route.fromUrl () model.url)))
-                (\user ->
-                    Page.view (Pages.Admin.Home_.page user model.shared (Route.fromUrl () model.url)) pageModel
-                        |> View.map Main.Pages.Msg.Admin_Home_
                         |> View.map Page
                 )
                 (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
@@ -1292,6 +1292,16 @@ toPageUrlHookCmd model routes =
                 )
                 (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
 
+        Main.Pages.Model.Admin pageModel ->
+            Auth.Action.command
+                (\user ->
+                    Page.toUrlMessages routes (Pages.Admin.page user model.shared (Route.fromUrl () model.url)) 
+                        |> List.map Main.Pages.Msg.Admin
+                        |> List.map Page
+                        |> toCommands
+                )
+                (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
+
         Main.Pages.Model.Admin_AddUser pageModel ->
             Auth.Action.command
                 (\user ->
@@ -1327,16 +1337,6 @@ toPageUrlHookCmd model routes =
                 (\user ->
                     Page.toUrlMessages routes (Pages.Admin.ShowJson.page user model.shared (Route.fromUrl () model.url)) 
                         |> List.map Main.Pages.Msg.Admin_ShowJson
-                        |> List.map Page
-                        |> toCommands
-                )
-                (Auth.onPageLoad model.shared (Route.fromUrl () model.url))
-
-        Main.Pages.Model.Admin_Home_ pageModel ->
-            Auth.Action.command
-                (\user ->
-                    Page.toUrlMessages routes (Pages.Admin.Home_.page user model.shared (Route.fromUrl () model.url)) 
-                        |> List.map Main.Pages.Msg.Admin_Home_
                         |> List.map Page
                         |> toCommands
                 )
@@ -1477,6 +1477,9 @@ isAuthProtected routePath =
         Route.Path.Home_ ->
             True
 
+        Route.Path.Admin ->
+            True
+
         Route.Path.Admin_AddUser ->
             True
 
@@ -1487,9 +1490,6 @@ isAuthProtected routePath =
             True
 
         Route.Path.Admin_ShowJson ->
-            True
-
-        Route.Path.Admin_Home_ ->
             True
 
         Route.Path.ChangePassword ->

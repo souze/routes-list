@@ -8,11 +8,11 @@ import Url.Parser exposing ((</>))
 
 type Path
     = Home_
+    | Admin
     | Admin_AddUser
     | Admin_ChangePassword
     | Admin_RemoveUser
     | Admin_ShowJson
-    | Admin_Home_
     | ChangePassword
     | InputJson
     | MoreOptions
@@ -43,6 +43,9 @@ fromString urlPath =
         [] ->
             Just Home_
 
+        "admin" :: [] ->
+            Just Admin
+
         "admin" :: "add-user" :: [] ->
             Just Admin_AddUser
 
@@ -54,9 +57,6 @@ fromString urlPath =
 
         "admin" :: "show-json" :: [] ->
             Just Admin_ShowJson
-
-        "admin" :: [] ->
-            Just Admin_Home_
 
         "change-password" :: [] ->
             Just ChangePassword
@@ -106,6 +106,9 @@ toString path =
                 Home_ ->
                     []
 
+                Admin ->
+                    [ "admin" ]
+
                 Admin_AddUser ->
                     [ "admin", "add-user" ]
 
@@ -117,9 +120,6 @@ toString path =
 
                 Admin_ShowJson ->
                     [ "admin", "show-json" ]
-
-                Admin_Home_ ->
-                    [ "admin", params.home ]
 
                 ChangePassword ->
                     [ "change-password" ]

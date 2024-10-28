@@ -1,11 +1,11 @@
 module Main.Pages.Msg exposing (Msg(..))
 
 import Pages.Home_
+import Pages.Admin
 import Pages.Admin.AddUser
 import Pages.Admin.ChangePassword
 import Pages.Admin.RemoveUser
 import Pages.Admin.ShowJson
-import Pages.Admin.Home_
 import Pages.ChangePassword
 import Pages.InputJson
 import Pages.MoreOptions
@@ -19,11 +19,11 @@ import Pages.NotFound_
 
 type Msg
     = Home_ Pages.Home_.Msg
+    | Admin Pages.Admin.Msg
     | Admin_AddUser Pages.Admin.AddUser.Msg
     | Admin_ChangePassword Pages.Admin.ChangePassword.Msg
     | Admin_RemoveUser Pages.Admin.RemoveUser.Msg
     | Admin_ShowJson Pages.Admin.ShowJson.Msg
-    | Admin_Home_ Pages.Admin.Home_.Msg
     | ChangePassword Pages.ChangePassword.Msg
     | InputJson Pages.InputJson.Msg
     | MoreOptions Pages.MoreOptions.Msg
