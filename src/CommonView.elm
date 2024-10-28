@@ -8,6 +8,7 @@ import Html.Events
 import Json.Decode
 import List.Extra
 import Route
+import Route.Path
 import Set exposing (Set)
 import Widget
 import Widget.Material as Material
@@ -16,17 +17,17 @@ import Widget.Material as Material
 header : Element msg
 header =
     Element.row [ Element.spacing 10 ]
-        [ linkToRoute "Log" <| Route.Routes__Filter_ { filter = "log" }
-        , linkToRoute "Wishlist" <| Route.Routes__Filter_ { filter = "wishlist" }
-        , linkToRoute "+" <| Route.NewRoute
-        , linkToRoute "..." <| Route.MoreOptions
+        [ linkToRoute "Log" <| Route.Path.Routes_Filter_ { filter = "log" }
+        , linkToRoute "Wishlist" <| Route.Path.Routes_Filter_ { filter = "wishlist" }
+        , linkToRoute "+" <| Route.Path.NewRoute
+        , linkToRoute "..." <| Route.Path.MoreOptions
         ]
 
 
-linkToRoute : String -> Route.Route -> Element msg
+linkToRoute : String -> Route.Path.Path -> Element msg
 linkToRoute labelText route =
     Element.link []
-        { url = Route.toHref route
+        { url = "routeToString implemented not yet"
         , label = actionButtonLabel labelText
         }
 
@@ -57,7 +58,7 @@ buttonToSendEvent labelText event =
 adminPageWithItems : List (Element msg) -> Element msg
 adminPageWithItems items =
     mainColumn
-        (linkToRoute "Home" Route.Admin__Home_
+        (linkToRoute "Home" Route.Path.Admin
             :: items
         )
 

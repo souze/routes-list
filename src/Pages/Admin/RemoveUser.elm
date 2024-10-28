@@ -1,13 +1,14 @@
 module Pages.Admin.RemoveUser exposing (Model, Msg(..), page)
 
+import Auth
 import Bridge
 import CommonView
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Input
-import Gen.Params.Admin.RemoveUser exposing (Params)
 import Lamdera
-import Page
-import Request
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import View exposing (View)
 
@@ -15,7 +16,7 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user model route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
@@ -30,9 +31,11 @@ type alias Model =
     { username : String }
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
-    ( { username = "" }, Cmd.none )
+    ( { username = "" }
+    , Effect.none
+    )
 
 
 
@@ -44,15 +47,17 @@ type Msg
     | RemoveUser
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         FieldUpdate newValue ->
-            ( { model | username = newValue }, Cmd.none )
+            ( { model | username = newValue }
+            , Effect.none
+            )
 
         RemoveUser ->
             ( model
-            , Lamdera.sendToBackend <|
+            , Effect.sendToBackend <|
                 Bridge.ToBackendAdminMsg (Bridge.RemoveUser model.username)
             )
 

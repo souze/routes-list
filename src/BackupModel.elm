@@ -1,6 +1,6 @@
 module BackupModel exposing (..)
 
-import Route exposing (RouteData)
+import ClimbRoute exposing (RouteData)
 
 
 type alias BackupModel =

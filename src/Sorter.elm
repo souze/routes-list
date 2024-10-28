@@ -1,10 +1,10 @@
 module Sorter exposing (..)
 
+import ClimbRoute exposing (RouteData)
 import Date
 import Element exposing (Element)
 import Element.Input
 import List
-import Route exposing (RouteData)
 import Widget
 import Widget.Material as Material
 
@@ -125,7 +125,7 @@ sortByAttr2 attr =
 
 gradeSorter : RouteData -> RouteData -> Order
 gradeSorter a b =
-    Route.gradeSorter a.grade b.grade
+    ClimbRoute.gradeSorter a.grade b.grade
 
 
 getComparableAttr : SortAttribute -> RouteData -> String

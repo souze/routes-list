@@ -1,26 +1,27 @@
 module Pages.Routes.Filter_ exposing (ButtonId(..), DatePickerData, Filter, Metadata, Model, Msg(..), page)
 
+import Auth
 import Bridge
+import ClimbRoute exposing (..)
 import CommonView
 import Date exposing (Date)
 import DatePicker
 import Dict exposing (Dict)
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Background
 import Element.Border
 import Element.Font
 import Element.Input
 import Filter
-import Gen.Params.Routes.Filter_ exposing (Params)
-import Gen.Route
 import Html
 import Html.Attributes
 import ImageGallery
 import Lamdera
 import Maybe.Extra
-import Page
-import Request
-import Route exposing (..)
+import Page exposing (Page)
+import Route exposing (Route)
+import Route.Path
 import RouteEditPane
 import Set exposing (Set)
 import Shared
@@ -33,8 +34,8 @@ import Widget
 page : Auth.User -> Shared.Model -> Route { filter : String } -> Page Model Msg
 page user shared route =
     Page.new
-        { init = init route shared
-        , update = update shared route
+        { init = \_ -> init route
+        , update = update shared
         , view = view shared
         , subscriptions = \_ -> Sub.none
         }
@@ -79,12 +80,12 @@ type alias Model =
     }
 
 
-init : Request.With Params -> Shared.Model -> ( Model, Cmd Msg )
-init req _ =
+init : Route { filter : String } -> ( Model, Effect Msg )
+init route =
     let
         filter : Maybe Filter
         filter =
-            case req.params.filter of
+            case route.params.filter of
                 "log" ->
                     Just { filter = { initialAllFilter | tickdate = Filter.ShowHasTickdate }, sorter = Sorter.initialModel }
 
@@ -101,7 +102,7 @@ init req _ =
               , metadatas = Dict.empty
               , galleryModel = Nothing
               }
-            , Cmd.none
+            , Effect.none
             )
 
         Nothing ->
@@ -110,7 +111,7 @@ init req _ =
               , metadatas = Dict.empty
               , galleryModel = Nothing
               }
-            , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "log" }) req
+            , Effect.pushRoutePath (Route.Path.Routes_Filter_ { filter = "log" })
             )
 
 
@@ -138,17 +139,17 @@ type Msg
     | ThumbnailPressed Int (List String)
 
 
-update : Shared.Model -> Request.With params -> Msg -> Model -> ( Model, Cmd Msg )
-update shared req msg model =
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
+update shared msg model =
     case msg of
         RouteEditPaneMsg rid editPaneMsg ->
             ( { model | metadatas = model.metadatas |> updateRouteEditPane rid editPaneMsg }
-            , Cmd.none
+            , Effect.none
             )
 
         ToggleFilters ->
             ( { model | showSortBox = not model.showSortBox }
-            , Cmd.none
+            , Effect.none
             )
 
         ButtonPressed id ->
@@ -156,29 +157,29 @@ update shared req msg model =
 
         SortSelected sorterMsg ->
             ( { model | filter = model.filter |> updateSorter sorterMsg }
-            , Cmd.none
+            , Effect.none
             )
 
         FilterMsg filterMsg ->
             ( { model | filter = model.filter |> updateFilter filterMsg }
-            , Cmd.none
+            , Effect.none
             )
 
         GalleryMsg galleryMsg ->
             case model.galleryModel of
                 Just galleryModel ->
                     ( { model | galleryModel = ImageGallery.update galleryMsg galleryModel }
-                    , Cmd.none
+                    , Effect.none
                     )
 
                 Nothing ->
                     ( model
-                    , Cmd.none
+                    , Effect.none
                     )
 
         ThumbnailPressed index urls ->
             ( { model | galleryModel = Just <| ImageGallery.init urls index }
-            , Cmd.none
+            , Effect.none
             )
 
 
@@ -229,37 +230,37 @@ type ButtonId
     | CreateButton
 
 
-buttonPressed : ButtonId -> Date -> Model -> ( Model, Cmd Msg )
+buttonPressed : ButtonId -> Date -> Model -> ( Model, Effect Msg )
 buttonPressed id currentDate model =
     case id of
         ExpandRouteButton routeId ->
             ( toggleExpansionRouteId routeId model
-            , Cmd.none
+            , Effect.none
             )
 
         EditRouteButton route ->
             ( enableEdit currentDate route model
-            , Cmd.none
+            , Effect.none
             )
 
         SaveButton route ->
             ( discardChanges route.id model
-            , Lamdera.sendToBackend <| Bridge.UpdateRoute route
+            , Effect.sendToBackend <| Bridge.UpdateRoute route
             )
 
         DiscardButton routeId ->
             ( discardChanges routeId model
-            , Cmd.none
+            , Effect.none
             )
 
         RemoveButton routeId ->
             ( discardChanges routeId model
-            , Lamdera.sendToBackend <| Bridge.RemoveRoute routeId
+            , Effect.sendToBackend <| Bridge.RemoveRoute routeId
             )
 
         CreateButton ->
             ( model
-            , Cmd.none
+            , Effect.none
             )
 
 
@@ -284,7 +285,7 @@ enableEdit currentDate rd m =
                                 Just
                                     (RouteEditPane.init
                                         currentDate
-                                        (Route.newRouteDataFromExisting rd)
+                                        (ClimbRoute.newRouteDataFromExisting rd)
                                     )
                         }
                     )
@@ -353,14 +354,14 @@ toggleFilterButton =
     CommonView.buttonToSendEvent "Filter" ToggleFilters
 
 
-uniqueGrades : List Route.RouteData -> Set String
+uniqueGrades : List ClimbRoute.RouteData -> Set String
 uniqueGrades routes =
     routes
         |> List.map .grade
         |> Set.fromList
 
 
-uniqueTags : List Route.RouteData -> Set String
+uniqueTags : List ClimbRoute.RouteData -> Set String
 uniqueTags routes =
     routes
         |> List.concatMap .tags

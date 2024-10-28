@@ -1,11 +1,11 @@
 module JsonRoute exposing (decodeRouteList, encodeRoute)
 
+import ClimbRoute exposing (ClimbType(..), NewRouteData, RouteData)
 import Date exposing (Date)
 import Html exposing (b)
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
-import Route exposing (ClimbType(..), NewRouteData, RouteData)
 
 
 decodeRouteList : Json.Decode.Decoder (List NewRouteData)
@@ -46,7 +46,7 @@ decodeTickdateString =
 climbTypeDecoder : Json.Decode.Decoder ClimbType
 climbTypeDecoder =
     Json.Decode.map
-        Route.stringToClimbType
+        ClimbRoute.stringToClimbType
         Json.Decode.string
 
 
@@ -58,7 +58,7 @@ encodeRoute route =
          , ( "grade", Json.Encode.string route.grade )
          , ( "comments", Json.Encode.string route.notes )
          , ( "tags", Json.Encode.list Json.Encode.string route.tags )
-         , ( "type", Json.Encode.string (Route.climbTypeToString route.type_) )
+         , ( "type", Json.Encode.string (ClimbRoute.climbTypeToString route.type_) )
          , ( "images", Json.Encode.list Json.Encode.string route.images )
          , ( "videos", Json.Encode.list Json.Encode.string route.videos )
          ]

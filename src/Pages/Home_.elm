@@ -1,9 +1,10 @@
 module Pages.Home_ exposing (Model, Msg(..), page)
 
-import Gen.Params.Home_ exposing (Params)
-import Gen.Route
-import Page
-import Request
+import Auth
+import Effect exposing (Effect)
+import Page exposing (Page)
+import Route exposing (Route)
+import Route.Path
 import Shared
 import View exposing (View)
 
@@ -11,7 +12,7 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user model route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
@@ -26,10 +27,10 @@ type alias Model =
     {}
 
 
-init : Request.With Params -> ( Model, Cmd Msg )
-init req =
+init : ( Model, Effect Msg )
+init =
     ( {}
-    , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
+    , Effect.pushRoutePath <| Route.Path.SignIn_SignInDest_ { signInDest = "_" }
     )
 
 
@@ -41,11 +42,13 @@ type Msg
     = ReplaceMe
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         ReplaceMe ->
-            ( model, Cmd.none )
+            ( model
+            , Effect.none
+            )
 
 
 

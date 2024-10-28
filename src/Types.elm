@@ -1,26 +1,34 @@
 module Types exposing (..)
 
+-- import ElmLand
+
 import BackendMsg
 import BackupModel
 import Bridge
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
+import ClimbRoute exposing (..)
 import Date exposing (Date)
 import DatePicker
 import Dict exposing (Dict)
 import Lamdera
-import Route exposing (..)
+import Main as ElmLand
+import Page
 import Shared
 import Time
 import Url exposing (Url)
 
 
 type alias FrontendModel =
-    { url : Url
-    , key : Key
-    , shared : Shared.Model
-    , page : Pages.Model
-    }
+    ElmLand.Model
+
+
+
+-- { url : Url
+-- , key : Key
+-- , shared : Shared.Model
+-- -- , page : Pages.Model
+-- }
 
 
 type alias Password =
@@ -69,12 +77,16 @@ type FieldType
     | FieldUserChangePasswordNewPass2
 
 
-type FrontendMsg
-    = ClickedLink UrlRequest
-    | ChangedUrl Url
-    | Shared Shared.Msg
-    | Page Pages.Msg
-    | NoOpFrontendMsg
+type alias FrontendMsg =
+    ElmLand.Msg
+
+
+
+-- = ClickedLink UrlRequest
+-- | ChangedUrl Url
+-- | Shared Shared.Msg
+--   -- | Page Pages.Msg
+-- | NoOpFrontendMsg
 
 
 type alias ToBackend =

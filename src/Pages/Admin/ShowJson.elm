@@ -5,12 +5,14 @@ import BackupModel
 import Bridge
 import ClimbRoute exposing (RouteData)
 import CommonView
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Evergreen.V3.Types exposing (BackupModel)
 import Json.Encode
 import JsonRoute
 import Lamdera
-import Page
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import View exposing (View)
 
@@ -18,7 +20,7 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user model route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
@@ -34,10 +36,10 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
     ( { backup = Nothing }
-    , Lamdera.sendToBackend <| Bridge.ToBackendAdminMsg Bridge.RequestModel
+    , Effect.sendToBackend (Bridge.ToBackendAdminMsg Bridge.RequestModel)
     )
 
 
@@ -49,12 +51,12 @@ type Msg
     = BackupModelFromBackend BackupModel.BackupModel
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         BackupModelFromBackend backupModel ->
             ( { model | backup = Just <| backupModelToJsonStr backupModel }
-            , Cmd.none
+            , Effect.none
             )
 
 

@@ -10,7 +10,8 @@ import Element.Input
 import Html.Events
 import Json.Decode
 import Lamdera
-import Page
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import View exposing (View)
 import Widget
@@ -20,7 +21,7 @@ import Widget.Material
 page : Shared.Model -> Route { signInDest : String } -> Page Model Msg
 page model route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
@@ -71,9 +72,7 @@ update msg model =
     case msg of
         ClickedSignIn ->
             ( model
-            , Effect.fromCmd <|
-                Lamdera.sendToBackend
-                    (Bridge.ToBackendLogIn model.username model.password)
+            , Effect.sendToBackend (Bridge.ToBackendLogIn model.username model.password)
             )
 
         FieldChanged UsernameField newValue ->

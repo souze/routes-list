@@ -5,3 +5,4 @@ dist
 .bin
 .idea
 scratch
+.elm-land/server

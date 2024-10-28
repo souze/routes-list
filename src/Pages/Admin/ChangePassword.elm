@@ -1,14 +1,15 @@
 module Pages.Admin.ChangePassword exposing (Model, Msg(..), page)
 
+import Auth
 import Bridge
 import CommonView
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Input
 import FormDict exposing (FormDict)
-import Gen.Params.Admin.ChangePassword exposing (Params)
 import Lamdera
-import Page
-import Request
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import Util
 import View exposing (View)
@@ -17,7 +18,7 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user model route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = Util.noSub
@@ -32,9 +33,9 @@ type alias Model =
     { form : FormDict }
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
-    ( { form = FormDict.init }, Cmd.none )
+    ( { form = FormDict.init }, Effect.none )
 
 
 
@@ -46,17 +47,17 @@ type Msg
     | ChangePassword
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         FieldUpdate fieldName newValue ->
             ( { model | form = model.form |> FormDict.insert fieldName newValue }
-            , Cmd.none
+            , Effect.none
             )
 
         ChangePassword ->
             ( model
-            , Lamdera.sendToBackend <|
+            , Effect.sendToBackend <|
                 Bridge.ToBackendAdminMsg
                     (Bridge.AdminMsgChangePassword
                         { username = model.form |> FormDict.get "username"

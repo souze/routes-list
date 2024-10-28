@@ -1,14 +1,15 @@
 module Pages.OutputJson exposing (Model, Msg(..), page)
 
+import Auth
+import ClimbRoute exposing (RouteData)
 import CommonView
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Input
-import Gen.Params.OutputJson exposing (Params)
 import Json.Encode
 import JsonRoute
-import Page
-import Request
-import Route exposing (RouteData)
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import View exposing (View)
 
@@ -16,7 +17,7 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user shared route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view shared
         , subscriptions = \_ -> Sub.none
@@ -31,9 +32,9 @@ type alias Model =
     {}
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
-    ( {}, Cmd.none )
+    ( {}, Effect.none )
 
 
 
@@ -44,11 +45,11 @@ type Msg
     = NoOp
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            ( model, Effect.none )
 
 
 

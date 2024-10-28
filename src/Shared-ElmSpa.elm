@@ -1,59 +1,49 @@
-module Shared exposing
-    ( Flags, decoder
-    , Model, Msg
-    , init, update, subscriptions
-    )
+module Shared exposing (..)
 
-{-|
-
-@docs Flags, decoder
-@docs Model, Msg
-@docs init, update, subscriptions
-
--}
-
-import ClimbRoute exposing (RouteData)
+import ClimbRoute exposing (..)
 import Date exposing (Date)
-import Dict
+import Dict exposing (Dict)
 import Effect exposing (Effect)
+import Element exposing (..)
+import Element.Region as Region
 import Json.Decode
 import Route exposing (Route)
 import Route.Path
-import Shared.Model exposing (..)
-import Shared.Msg exposing (..)
 import Task
 import Time
-
-
-
--- FLAGS
-
-
-type alias Flags =
-    {}
-
-
-decoder : Json.Decode.Decoder Flags
-decoder =
-    Json.Decode.succeed {}
+import TypedSvg.Types exposing (Display(..))
+import Url exposing (Url)
+import Url.Builder
 
 
 
 -- INIT
 
 
+type alias Flags =
+    ()
+
+
 type alias Model =
-    Shared.Model.Model
+    { routes : List RouteData
+    , user : Maybe User
+    , currentDate : Date
+    }
 
 
-init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
-init flagsResult route =
-    ( { routes = initialRoutes
-      , user = Nothing
-      , currentDate = Date.fromCalendarDate 2022 Time.Aug 1
-      }
-    , Effect.sendCmd <| Task.perform Shared.Msg.SetCurrentDate Date.today
-    )
+type User
+    = NormalUser
+    | AdminUser
+
+
+decoder : Json.Decode.Decoder Flags
+decoder =
+    Debug.todo "decoder"
+
+
+ecoderinitialRoutes : List RouteData
+ecoderinitialRoutes =
+    Debug.todo "initialRoutes"
 
 
 initialRoutes =
@@ -71,23 +61,41 @@ initialRoutes =
     ]
 
 
+init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
+init _ _ =
+    ( { routes = initialRoutes
+      , user = Nothing
+      , currentDate = Date.fromCalendarDate 2022 Time.Aug 1
+      }
+    , Effect.sendCmd <| Task.perform SetCurrentDate Date.today
+    )
+
+
 
 -- UPDATE
 
 
-type alias Msg =
-    Shared.Msg.Msg
+type SharedFromBackend
+    = AllRoutesAnnouncement (List RouteData)
+    | LogOut
+    | YouAreAdmin
+
+
+type Msg
+    = Noop
+    | MsgFromBackend SharedFromBackend
+    | SetCurrentDate Date
 
 
 update : Route () -> Msg -> Model -> ( Model, Effect Msg )
 update route msg model =
     case msg of
-        Shared.Msg.NoOp ->
+        Noop ->
             ( model
             , Effect.none
             )
 
-        Shared.Msg.MsgFromBackend (Shared.Msg.AllRoutesAnnouncement newRoutes) ->
+        MsgFromBackend (AllRoutesAnnouncement newRoutes) ->
             ( { model
                 | routes = newRoutes
                 , user = Just NormalUser
@@ -127,10 +135,6 @@ update route msg model =
             )
 
 
-
--- SUBSCRIPTIONS
-
-
 subscriptions : Route () -> Model -> Sub Msg
-subscriptions route model =
+subscriptions _ _ =
     Sub.none

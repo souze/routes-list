@@ -1,21 +1,22 @@
-module Pages.Admin.Home_ exposing (Model, Msg(..), page)
+module Pages.Admin exposing (Model, Msg(..), page)
 
+import Auth
 import Bridge
 import CommonView
+import Effect exposing (Effect)
 import Element exposing (Element)
-import Gen.Params.Admin.Home_ exposing (Params)
-import Gen.Route
 import Lamdera
-import Page
-import Request
+import Page exposing (Page)
+import Route exposing (Route)
+import Route.Path
 import Shared
 import View exposing (View)
 
 
-page : Auth.User -> Shared.Model -> Route { home : String } -> Page Model Msg
+page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user model route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -30,9 +31,9 @@ type alias Model =
     {}
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
-    ( {}, Cmd.none )
+    ( {}, Effect.none )
 
 
 
@@ -43,12 +44,12 @@ type Msg
     = LogOut
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         LogOut ->
             ( model
-            , Lamdera.sendToBackend <| Bridge.ToBackendLogOut
+            , Effect.sendToBackend Bridge.ToBackendLogOut
             )
 
 
@@ -75,9 +76,9 @@ view model =
 viewBody : Element Msg
 viewBody =
     CommonView.adminPageWithItems
-        [ CommonView.linkToRoute "Show Json" Gen.Route.Admin__ShowJson
-        , CommonView.linkToRoute "Add user" Gen.Route.Admin__AddUser
-        , CommonView.linkToRoute "Remove user" Gen.Route.Admin__RemoveUser
-        , CommonView.linkToRoute "Change password for user" Gen.Route.Admin__ChangePassword
+        [ CommonView.linkToRoute "Show Json" Route.Path.Admin_ShowJson
+        , CommonView.linkToRoute "Add user" Route.Path.Admin_AddUser
+        , CommonView.linkToRoute "Remove user" Route.Path.Admin_RemoveUser
+        , CommonView.linkToRoute "Change password for user" Route.Path.Admin_ChangePassword
         , CommonView.buttonToSendEvent "Log out" LogOut
         ]

@@ -1,9 +1,9 @@
 module Filter exposing (..)
 
+import ClimbRoute exposing (RouteData)
 import CommonView
 import Element exposing (Element)
 import Maybe.Extra
-import Route exposing (RouteData)
 import Set exposing (Set)
 import Widget
 import Widget.Material as Material
@@ -112,7 +112,7 @@ filterType filter rd =
         True
 
     else
-        Set.member (Route.climbTypeToString rd.type_) filter
+        Set.member (ClimbRoute.climbTypeToString rd.type_) filter
 
 
 filterTickdate : TickDateFilter -> RouteData -> Bool
@@ -183,7 +183,7 @@ viewTags selected options =
 
 viewTypeFilter : Set String -> Element Msg
 viewTypeFilter selected =
-    CommonView.selectMany selected Route.climbTypeListStr
+    CommonView.selectMany selected ClimbRoute.climbTypeListStr
         |> Element.map PressedTypeFilter
 
 
@@ -216,7 +216,7 @@ viewGradeFilter selected options =
     let
         sortedGrades : List String
         sortedGrades =
-            options |> Set.toList |> List.sortWith Route.gradeSorter
+            options |> Set.toList |> List.sortWith ClimbRoute.gradeSorter
     in
     CommonView.selectMany selected sortedGrades
         |> Element.map PressedGradeFilter

@@ -1,19 +1,20 @@
 module RouteEditPane exposing (Model, Msg(..), init, update, view)
 
+import Auth
 import Bridge
+import ClimbRoute exposing (CommonRouteData, NewRouteData, RouteData)
 import CommonView
 import Date exposing (Date)
 import DatePicker
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Background
 import Element.Border
 import Element.Input
-import Gen.Params.NewRoute exposing (Params)
-import Gen.Route
 import Lamdera
 import List.Extra
-import Request exposing (Request)
-import Route exposing (CommonRouteData, NewRouteData, RouteData)
+import Page exposing (Page)
+import Route exposing (Route)
 import Set
 import View exposing (View)
 
@@ -190,44 +191,44 @@ parsePictures input =
                 |> List.filter (\s -> s /= "")
 
 
-indexToType : Int -> Route.ClimbType
+indexToType : Int -> ClimbRoute.ClimbType
 indexToType index =
     case index of
         0 ->
-            Route.Trad
+            ClimbRoute.Trad
 
         1 ->
-            Route.Sport
+            ClimbRoute.Sport
 
         2 ->
-            Route.Mix
+            ClimbRoute.Mix
 
         3 ->
-            Route.Boulder
+            ClimbRoute.Boulder
 
         4 ->
-            Route.Aid
+            ClimbRoute.Aid
 
         _ ->
-            Route.Trad
+            ClimbRoute.Trad
 
 
-typeToIndex : Route.ClimbType -> Int
+typeToIndex : ClimbRoute.ClimbType -> Int
 typeToIndex type_ =
     case type_ of
-        Route.Trad ->
+        ClimbRoute.Trad ->
             0
 
-        Route.Sport ->
+        ClimbRoute.Sport ->
             1
 
-        Route.Mix ->
+        ClimbRoute.Mix ->
             2
 
-        Route.Boulder ->
+        ClimbRoute.Boulder ->
             3
 
-        Route.Aid ->
+        ClimbRoute.Aid ->
             4
 
 

@@ -1,13 +1,14 @@
 module Pages.MoreOptions exposing (Model, Msg(..), page)
 
+import Auth
 import Bridge
 import CommonView
+import Effect exposing (Effect)
 import Element exposing (Element)
-import Gen.Params.MoreOptions exposing (Params)
-import Gen.Route
 import Lamdera
-import Page
-import Request
+import Page exposing (Page)
+import Route exposing (Route)
+import Route.Path
 import Shared
 import View exposing (View)
 
@@ -15,7 +16,7 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user model route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
@@ -30,9 +31,9 @@ type alias Model =
     {}
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
-    ( {}, Cmd.none )
+    ( {}, Effect.none )
 
 
 
@@ -43,12 +44,12 @@ type Msg
     = Logout
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         Logout ->
             ( model
-            , Lamdera.sendToBackend Bridge.ToBackendLogOut
+            , Effect.sendToBackend Bridge.ToBackendLogOut
             )
 
 
@@ -75,10 +76,10 @@ view _ =
 viewBody : Element Msg
 viewBody =
     CommonView.mainColumnWithToprow
-        [ CommonView.linkToRoute "New Route" Gen.Route.NewRoute
-        , CommonView.linkToRoute "Stats" Gen.Route.Stats
-        , CommonView.linkToRoute "Input Json" Gen.Route.InputJson
-        , CommonView.linkToRoute "View as Json" Gen.Route.OutputJson
-        , CommonView.linkToRoute "Change password" Gen.Route.ChangePassword
+        [ CommonView.linkToRoute "New Route" Route.Path.NewRoute
+        , CommonView.linkToRoute "Stats" Route.Path.Stats
+        , CommonView.linkToRoute "Input Json" Route.Path.InputJson
+        , CommonView.linkToRoute "View as Json" Route.Path.OutputJson
+        , CommonView.linkToRoute "Change password" Route.Path.ChangePassword
         , CommonView.buttonToSendEvent "Log out" Logout
         ]

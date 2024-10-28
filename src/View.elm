@@ -1,8 +1,11 @@
 module View exposing (View, fromString, map, none, placeholder, toBrowserDocument)
 
+import Browser
 import Element exposing (..)
 import Html
-import Route
+import Route exposing (Route)
+import Shared
+import Shared.Model
 
 
 type alias View msg =
@@ -31,7 +34,7 @@ map fn view =
 
 
 toBrowserDocument : { shared : Shared.Model.Model, route : Route (), view : View msg } -> Browser.Document msg
-toBrowserDocument view =
+toBrowserDocument { view } =
     { title = view.title
     , body = [ Element.layout [] view.body ]
     }

@@ -1,18 +1,19 @@
 module Pages.NewRoute exposing (Model, Msg(..), page)
 
+import Auth
 import Bridge
+import ClimbRoute exposing (CommonRouteData, NewRouteData, RouteData)
 import CommonView
 import Date exposing (Date)
 import DatePicker
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Background
 import Element.Input
-import Gen.Params.NewRoute exposing (Params)
-import Gen.Route
 import Lamdera
-import Page
-import Request exposing (Request)
-import Route exposing (CommonRouteData, NewRouteData, RouteData)
+import Page exposing (Page)
+import Route exposing (Route)
+import Route.Path
 import RouteEditPane
 import Shared
 import View exposing (View)
@@ -21,8 +22,8 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user shared route =
     Page.new
-        { init = init shared
-        , update = update ()
+        { init = \_ -> init shared
+        , update = update
         , view = view
         , subscriptions = \_ -> Sub.none
         }
@@ -37,11 +38,10 @@ type alias Model =
     }
 
 
-init : Shared.Model -> ( Model, Cmd Msg )
+init : Shared.Model -> ( Model, Effect Msg )
 init shared =
-    ( { newRouteData = RouteEditPane.init shared.currentDate Route.initialNewRouteData
-      }
-    , Cmd.none
+    ( { newRouteData = RouteEditPane.init shared.currentDate ClimbRoute.initialNewRouteData }
+    , Effect.none
     )
 
 
@@ -54,19 +54,19 @@ type Msg
     | CreateRoute
 
 
-update : Request -> Msg -> Model -> ( Model, Cmd Msg )
-update req msg model =
+update : Msg -> Model -> ( Model, Effect Msg )
+update msg model =
     case msg of
         RouteEditMsg rem ->
             ( { model | newRouteData = model.newRouteData |> RouteEditPane.update rem }
-            , Cmd.none
+            , Effect.none
             )
 
         CreateRoute ->
             ( model
-            , Cmd.batch
-                [ Lamdera.sendToBackend <| Bridge.ToBackendCreateNewRoute model.newRouteData.route
-                , Request.pushRoute (Gen.Route.Routes__Filter_ { filter = "all" }) req
+            , Effect.batch
+                [ Effect.sendToBackend <| Bridge.ToBackendCreateNewRoute model.newRouteData.route
+                , Effect.pushRoutePath (Route.Path.Routes_Filter_ { filter = "all" })
 
                 -- Todo, maybe go to wishlist if the route is not climbed, and log if it is
                 ]

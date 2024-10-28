@@ -6,11 +6,14 @@ import Browser.Navigation as Nav exposing (Key)
 import Date
 import Effect
 import Element
+import Json.Encode
 import Lamdera
+import Main as ElmLand
 import Pages.Admin.ShowJson
 import Pages.SignIn.SignInDest_
 import Route as GenRoute
 import Shared
+import Shared.Msg
 import Task
 import Time
 import Types exposing (..)
@@ -24,175 +27,64 @@ type alias Model =
 
 app =
     Lamdera.frontend
-        { init = init
-        , onUrlRequest = ClickedLink
-        , onUrlChange = ChangedUrl
-        , update = update
+        { init = ElmLand.init Json.Encode.null
+        , onUrlRequest = ElmLand.UrlRequested
+        , onUrlChange = ElmLand.UrlChanged
+        , update = ElmLand.update
         , updateFromBackend = updateFromBackend
-        , subscriptions = subscriptions
-        , view = view
+        , subscriptions = ElmLand.subscriptions
+        , view = ElmLand.view
         }
 
 
 
 -- INIT
-
-
-init : Url -> Key -> ( Model, Cmd Msg )
-init url key =
-    let
-        ( shared, sharedCmd ) =
-            Shared.init (Request.create () url key) ()
-
-        ( page, effect ) =
-            Pages.init (GenRoute.fromUrl url) shared url key
-    in
-    ( initialFrontendModel url key shared page
-    , Cmd.batch
-        [ Cmd.map Shared sharedCmd
-        , Effect.toCmd ( Shared, Page ) effect
-        ]
-    )
-
-
-initialFrontendModel : Url.Url -> Key -> Shared.Model -> Pages.Model -> Model
-initialFrontendModel url key shared page =
-    { url = url
-    , key = key
-    , shared = shared
-    , page = page
-    }
-
-
-
+-- initialFrontendModel : Url.Url -> Key -> Shared.Model -> Pages.Model -> Model
+-- initialFrontendModel url key shared page =
+--     { url = url
+--     , key = key
+--     , shared = shared
+--     , page = page
+--     }
 -- UPDATE
-
-
-scrollPageToTop =
-    Task.perform (\_ -> NoOpFrontendMsg) (Browser.Dom.setViewport 0 0)
 
 
 type alias Msg =
     FrontendMsg
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        ClickedLink (Browser.Internal url) ->
-            ( model
-            , Nav.pushUrl model.key (Url.toString url)
-            )
-
-        ClickedLink (Browser.External url) ->
-            ( model
-            , Nav.load url
-            )
-
-        ChangedUrl url ->
-            if url.path /= model.url.path then
-                let
-                    ( page, effect ) =
-                        Pages.init (GenRoute.fromUrl url) model.shared url model.key
-                in
-                ( { model | url = url, page = page }
-                , Cmd.batch [ Effect.toCmd ( Shared, Page ) effect, scrollPageToTop ]
-                )
-
-            else
-                ( { model | url = url }, Cmd.none )
-
-        Shared sharedMsg ->
-            sharedUpdate model sharedMsg
-
-        Page pageMsg ->
-            pageUpdate pageMsg model
-
-        NoOpFrontendMsg ->
-            ( model, Cmd.none )
-
-
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =
     case msg of
         AllRoutesAnnouncement routes ->
-            sharedUpdate model (Shared.MsgFromBackend (Shared.AllRoutesAnnouncement routes))
+            ( model, sendSharedMsg (Shared.Msg.MsgFromBackend (Shared.Msg.AllRoutesAnnouncement routes)) )
 
         ToFrontendYourNotLoggedIn ->
-            sharedUpdate model (Shared.MsgFromBackend Shared.LogOut)
+            ( model, sendSharedMsg (Shared.Msg.MsgFromBackend Shared.Msg.LogOut) )
 
         ToFrontendYouAreAdmin ->
-            sharedUpdate model (Shared.MsgFromBackend Shared.YouAreAdmin)
+            ( model, sendSharedMsg (Shared.Msg.MsgFromBackend Shared.Msg.YouAreAdmin) )
 
-        ToFrontendAdminWholeModel backupModel ->
-            pageUpdate (Gen.Msg.Admin__ShowJson (Pages.Admin.ShowJson.BackupModelFromBackend backupModel)) model
-
-        ToFrontendWrongUserNamePassword ->
-            pageUpdate (Gen.Msg.SignIn__SignInDest_ Pages.SignIn.SignInDest_.WrongUsernameOrPassword) model
-
+        -- ToFrontendAdminWholeModel backupModel ->
+        --     pageUpdate (Gen.Msg.Admin__ShowJson (Pages.Admin.ShowJson.BackupModelFromBackend backupModel)) model
+        -- ToFrontendWrongUserNamePassword ->
+        --     pageUpdate (Gen.Msg.SignIn__SignInDest_ Pages.SignIn.SignInDest_.WrongUsernameOrPassword) model
         _ ->
             ( model, Cmd.none )
 
 
-pageUpdate : Pages.Msg -> Model -> ( Model, Cmd Msg )
-pageUpdate pageMsg model =
-    let
-        ( page, effect ) =
-            Pages.update pageMsg model.page model.shared model.url model.key
-    in
-    ( { model | page = page }
-    , Effect.toCmd ( Shared, Page ) effect
-    )
+
+-- pageUpdate : Pages.Msg -> Model -> ( Model, Cmd Msg )
+-- pageUpdate pageMsg model =
+--     let
+--         ( page, effect ) =
+--             Pages.update pageMsg model.page model.shared model.url model.key
+--     in
+--     ( { model | page = page }
+--     , Effect.toCmd ( Shared, Page ) effect
+--     )
 
 
-sharedUpdate : Model -> Shared.Msg -> ( Model, Cmd Msg )
-sharedUpdate model sharedMsg =
-    let
-        ( shared, sharedCmd ) =
-            Shared.update (Request.create () model.url model.key) sharedMsg model.shared
-
-        ( page, effect ) =
-            Pages.init (GenRoute.fromUrl model.url) shared model.url model.key
-    in
-    if page == Gen.Model.Redirecting_ then
-        ( { model | shared = shared, page = page }
-        , Cmd.batch
-            [ Cmd.map Shared sharedCmd
-            , Effect.toCmd ( Shared, Page ) effect
-            ]
-        )
-
-    else
-        ( { model | shared = shared }
-        , Cmd.map Shared sharedCmd
-        )
-
-
-
--- VIEW
-
-
-view : Model -> Browser.Document Msg
-view model =
-    model.shared
-        |> Shared.view (Request.create () model.url model.key)
-            { page = Pages.view model.page model.shared model.url model.key |> View.map Page
-            , toMsg = Shared
-            }
-        |> (\{ title, body } ->
-                { title = title
-                , body = [ Element.layout [] body ]
-                }
-           )
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch
-        [ Pages.subscriptions model.page model.shared model.url model.key |> Sub.map Page
-        , Shared.subscriptions (Request.create () model.url model.key) model.shared |> Sub.map Shared
-        ]
+sendSharedMsg : Shared.Msg.Msg -> Cmd Msg
+sendSharedMsg sharedMsg =
+    Time.now |> Task.perform (always (ElmLand.Shared sharedMsg))

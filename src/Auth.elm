@@ -11,15 +11,19 @@ module Auth exposing
 -}
 
 import Auth.Action
+import Dict
 import ElmSpa.Page as ElmSpa
-import Route
+import Route exposing (Route)
+import Route.Path
 import Shared
+import Shared.Model
+import View exposing (View)
 
 
 {-| Replace the "()" with your actual User type
 -}
 type alias User =
-    Shared.User
+    Shared.Model.User
 
 
 viewCustomPage : Shared.Model -> Route () -> View Never
@@ -28,13 +32,13 @@ viewCustomPage shared route =
         Just user ->
             case route.url.path of
                 "profile" ->
-                    Html.text "Profile"
+                    View.fromString "Profile"
 
                 _ ->
-                    Html.text "Not Found"
+                    View.fromString "Not Found"
 
         Nothing ->
-            Html.text "Not Found"
+            View.fromString "Not Found"
 
 
 {-| This function will run before any `protected` pages.
@@ -53,11 +57,11 @@ onPageLoad : Shared.Model -> Route () -> Auth.Action.Action User
 onPageLoad shared route =
     case shared.user of
         Just token ->
-            Auth.Action.loadPageWithUser Shared.NormalUser
+            Auth.Action.loadPageWithUser Shared.Model.NormalUser
 
         Nothing ->
             Auth.Action.pushRoute
-                { path = Route.Path.SignIn
+                { path = Route.Path.SignIn_SignInDest_ { signInDest = route.url.path }
                 , query = Dict.fromList [ ( "from", route.url.path ) ]
                 , hash = Nothing
                 }

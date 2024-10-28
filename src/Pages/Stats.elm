@@ -1,17 +1,18 @@
 module Pages.Stats exposing (Model, Msg(..), groupByGrade, page)
 
+import Auth
 import Chart as C
 import Chart.Attributes as CA
 import Chart.Events as CE
 import Chart.Item as CI
+import ClimbRoute exposing (RouteData)
 import CommonView
 import Dict exposing (Dict)
+import Effect exposing (Effect)
 import Element exposing (Element)
-import Gen.Params.Stats exposing (Params)
 import Maybe.Extra
-import Page
-import Request
-import Route exposing (RouteData)
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import Svg.Attributes as SvgAttr
 import View exposing (View)
@@ -20,7 +21,7 @@ import View exposing (View)
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
 page user shared route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view shared
         , subscriptions = \_ -> Sub.none
@@ -35,9 +36,9 @@ type alias Model =
     {}
 
 
-init : Model
+init : ( Model, Effect Msg )
 init =
-    {}
+    ( {}, Effect.none )
 
 
 
@@ -48,11 +49,11 @@ type Msg
     = ReplaceMe
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         ReplaceMe ->
-            model
+            ( model, Effect.none )
 
 
 
@@ -78,19 +79,19 @@ viewStats : Shared.Model -> Model -> Element Msg
 viewStats shared model =
     Element.column [ Element.padding 15, Element.spacing 10 ]
         [ Element.text "Routes climbed, Trad"
-        , gradeChart (isClimbedAndIsType Route.Trad) shared.routes
+        , gradeChart (isClimbedAndIsType ClimbRoute.Trad) shared.routes
         , Element.text "Routes climbed, Sport"
-        , gradeChart (isClimbedAndIsType Route.Sport) shared.routes
+        , gradeChart (isClimbedAndIsType ClimbRoute.Sport) shared.routes
         , Element.text "Routes climbed, Mix"
-        , gradeChart (isClimbedAndIsType Route.Mix) shared.routes
+        , gradeChart (isClimbedAndIsType ClimbRoute.Mix) shared.routes
         , Element.text "Routes climbed, Boulder"
-        , gradeChart (isClimbedAndIsType Route.Boulder) shared.routes
+        , gradeChart (isClimbedAndIsType ClimbRoute.Boulder) shared.routes
         , Element.text "Routes climbed, Aid"
-        , gradeChart (isClimbedAndIsType Route.Aid) shared.routes
+        , gradeChart (isClimbedAndIsType ClimbRoute.Aid) shared.routes
         ]
 
 
-isClimbedAndIsType : Route.ClimbType -> RouteData -> Bool
+isClimbedAndIsType : ClimbRoute.ClimbType -> RouteData -> Bool
 isClimbedAndIsType type_ rd =
     routeIsClimbed rd && rd.type_ == type_
 
@@ -108,7 +109,7 @@ gradeChart pred routes =
                 |> List.filter pred
                 |> groupByGrade
                 |> Dict.toList
-                |> List.sortWith (\a b -> Route.gradeSorter (Tuple.first a) (Tuple.first b))
+                |> List.sortWith (\a b -> ClimbRoute.gradeSorter (Tuple.first a) (Tuple.first b))
     in
     C.chart
         [ CA.width 300

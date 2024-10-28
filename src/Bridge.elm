@@ -1,14 +1,14 @@
 module Bridge exposing (..)
 
-import Route
+import ClimbRoute
 
 
 type ToBackend
-    = UpdateRoute Route.RouteData
-    | RemoveRoute Route.RouteId
-    | ToBackendCreateNewRoute Route.NewRouteData
+    = UpdateRoute ClimbRoute.RouteData
+    | RemoveRoute ClimbRoute.RouteId
+    | ToBackendCreateNewRoute ClimbRoute.NewRouteData
     | ToBackendLogOut
-    | ToBackendResetRouteList (List Route.NewRouteData)
+    | ToBackendResetRouteList (List ClimbRoute.NewRouteData)
     | ToBackendLogIn String String
     | ToBackendRefreshSession
     | ToBackendAdminMsg AdminMsg

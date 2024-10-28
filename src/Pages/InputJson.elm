@@ -1,26 +1,27 @@
 module Pages.InputJson exposing (Model, Msg(..), page)
 
+import Auth
 import Bridge
+import ClimbRoute exposing (NewRouteData)
 import CommonView
 import ConfirmComponent
+import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Input
-import Gen.Params.InputJson exposing (Params)
 import Json.Decode
 import JsonRoute
 import Lamdera
 import Maybe.Extra
-import Page
-import Request
-import Route exposing (NewRouteData)
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import View exposing (View)
 
 
 page : Auth.User -> Shared.Model -> Route () -> Page Model Msg
-page user model route =
+page user shared route =
     Page.new
-        { init = init
+        { init = \_ -> init
         , update = update
         , view = view (shared.routes |> List.length)
         , subscriptions = \_ -> Sub.none
@@ -34,19 +35,19 @@ page user model route =
 type alias Model =
     { text : String
     , statusText : Maybe String
-    , parsedRoutes : Maybe (List Route.NewRouteData)
+    , parsedRoutes : Maybe (List ClimbRoute.NewRouteData)
     , confirmState : ConfirmComponent.State
     }
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
     ( { text = ""
       , statusText = Nothing
       , parsedRoutes = Nothing
       , confirmState = ConfirmComponent.initialState
       }
-    , Cmd.none
+    , Effect.none
     )
 
 
@@ -60,12 +61,12 @@ type Msg
     | ConfirmComponentEvent ConfirmComponent.Msg
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         ConfirmComponentEvent event ->
             ( { model | confirmState = model.confirmState |> ConfirmComponent.update event }
-            , Cmd.none
+            , Effect.none
             )
 
         TextChanged newValue ->
@@ -83,12 +84,12 @@ update msg model =
                     , parsedRoutes = Nothing
                     , confirmState = ConfirmComponent.initialState
                     }
-            , Cmd.none
+            , Effect.none
             )
 
         SubmitToBackend newRoutes ->
             ( model
-            , Lamdera.sendToBackend <| Bridge.ToBackendResetRouteList newRoutes
+            , Effect.sendToBackend <| Bridge.ToBackendResetRouteList newRoutes
             )
 
 
