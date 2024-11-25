@@ -1,5 +1,7 @@
 module Main.Layouts.Msg exposing (..)
 
+import Layouts.Header
 
-type alias Msg =
-    Never
+
+type Msg
+    = Header Layouts.Header.Msg

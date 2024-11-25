@@ -10,6 +10,7 @@ import CommonView
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (Element)
+import Layouts
 import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
@@ -26,6 +27,7 @@ page user shared route =
         , view = view shared
         , subscriptions = \_ -> Sub.none
         }
+        |> Page.withLayout (\_ -> Layouts.Header {})
 
 
 
@@ -70,8 +72,7 @@ view shared model =
 viewBody : Shared.Model -> Model -> Element Msg
 viewBody shared model =
     CommonView.mainColumn
-        [ CommonView.header
-        , viewStats shared model
+        [ viewStats shared model
         ]
 
 

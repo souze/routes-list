@@ -1,5 +1,7 @@
 module Main.Layouts.Model exposing (..)
 
+import Layouts.Header
 
-type alias Model =
-    Never
+
+type Model
+    = Header { header : Layouts.Header.Model }

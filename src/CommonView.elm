@@ -3,6 +3,8 @@ module CommonView exposing (..)
 import ClimbRoute
 import Element exposing (Element)
 import Element.Background
+import Element.Border
+import Element.Font
 import Element.Input
 import Html.Events
 import Json.Decode
@@ -12,16 +14,6 @@ import Route.Path
 import Set exposing (Set)
 import Widget
 import Widget.Material as Material
-
-
-header : Element msg
-header =
-    Element.row [ Element.spacing 10 ]
-        [ linkToRoute "Log" <| Route.Path.Routes_Filter_ { filter = "log" }
-        , linkToRoute "Wishlist" <| Route.Path.Routes_Filter_ { filter = "wishlist" }
-        , linkToRoute "+" <| Route.Path.NewRoute
-        , linkToRoute "..." <| Route.Path.MoreOptions
-        ]
 
 
 linkToRoute : String -> Route.Path.Path -> Element msg
@@ -34,17 +26,32 @@ linkToRoute labelText route =
 
 actionButtonLabel : String -> Element msg
 actionButtonLabel text =
-    Element.el [ Element.Background.color (Element.rgb 0.6 0.6 0.6), Element.padding 8 ] (Element.text text)
+    Element.el
+        [ Element.padding 10
+        , Element.Border.width 3
+        , Element.Border.rounded 6
+        , Element.Border.color color.blue
+        , Element.Background.color color.lightBlue
+        , Element.Font.variant Element.Font.smallCaps
+
+        -- The order of mouseDown/mouseOver can be significant when changing
+        -- the same attribute in both
+        , Element.mouseDown
+            [ Element.Background.color color.blue
+            , Element.Border.color color.blue
+            , Element.Font.color color.white
+            ]
+        , Element.mouseOver
+            [ Element.Background.color color.white
+            , Element.Border.color color.lightGrey
+            ]
+        ]
+        (Element.text text)
 
 
 mainColumn : List (Element msg) -> Element msg
 mainColumn =
-    Element.column [ Element.spacing 10, Element.padding 20, Element.width Element.fill ]
-
-
-mainColumnWithToprow : List (Element msg) -> Element msg
-mainColumnWithToprow items =
-    mainColumn (header :: items)
+    Element.column [ Element.spacing 10, Element.width Element.fill ]
 
 
 buttonToSendEvent : String -> msg -> Element msg
@@ -154,3 +161,13 @@ onEnter msg =
                     )
             )
         )
+
+
+color =
+    { blue = Element.rgb255 0x72 0x9F 0xCF
+    , darkCharcoal = Element.rgb255 0x2E 0x34 0x36
+    , lightBlue = Element.rgb255 0xC5 0xE8 0xF7
+    , lightGrey = Element.rgb255 0xE0 0xE0 0xE0
+    , grey = Element.rgb255 0x93 0xA1 0xA1
+    , white = Element.rgb255 0xFF 0xFF 0xFF
+    }

@@ -11,6 +11,7 @@ import Element.Input
 import Json.Decode
 import JsonRoute
 import Lamdera
+import Layouts
 import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
@@ -26,6 +27,7 @@ page user shared route =
         , view = view (shared.routes |> List.length)
         , subscriptions = \_ -> Sub.none
         }
+        |> Page.withLayout (\_ -> Layouts.Header {})
 
 
 
@@ -111,7 +113,7 @@ view routeCount model =
 
 viewBody : Int -> Model -> Element Msg
 viewBody routeCount model =
-    CommonView.mainColumnWithToprow
+    CommonView.mainColumn
         [ viewJsonInput model.text
         , model.statusText
             |> Maybe.map viewJsonInputError

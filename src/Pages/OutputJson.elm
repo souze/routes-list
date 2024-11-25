@@ -8,6 +8,7 @@ import Element exposing (Element)
 import Element.Input
 import Json.Encode
 import JsonRoute
+import Layouts
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
@@ -22,6 +23,7 @@ page user shared route =
         , view = view shared
         , subscriptions = \_ -> Sub.none
         }
+        |> Page.withLayout (\_ -> Layouts.Header {})
 
 
 
@@ -69,7 +71,7 @@ view : Shared.Model -> Model -> View Msg
 view shared _ =
     { title = "View Json"
     , body =
-        CommonView.mainColumnWithToprow [ viewJsonText shared.routes ]
+        CommonView.mainColumn [ viewJsonText shared.routes ]
     }
 
 

@@ -9,6 +9,7 @@ import Html exposing (Html)
 import Json.Decode
 import Layout
 import Layouts
+import Layouts.Header
 import Main.Layouts.Model
 import Main.Layouts.Msg
 import Main.Pages.Model
@@ -90,6 +91,31 @@ init json url key =
     )
 
 
+initLayout : { key : Browser.Navigation.Key, url : Url, shared : Shared.Model, layout : Maybe Main.Layouts.Model.Model } -> Layouts.Layout Msg -> ( Main.Layouts.Model.Model, Cmd Msg )
+initLayout model layout =
+    case ( layout, model.layout ) of
+        ( Layouts.Header props, Just (Main.Layouts.Model.Header existing) ) ->
+            ( Main.Layouts.Model.Header existing
+            , Cmd.none
+            )
+
+        ( Layouts.Header props, _ ) ->
+            let
+                route : Route ()
+                route =
+                    Route.fromUrl () model.url
+
+                headerLayout =
+                    Layouts.Header.layout props model.shared route
+
+                ( headerLayoutModel, headerLayoutEffect ) =
+                    Layout.init headerLayout ()
+            in
+            ( Main.Layouts.Model.Header { header = headerLayoutModel }
+            , fromLayoutEffect model (Effect.map Main.Layouts.Msg.Header headerLayoutEffect)
+            )
+
+
 initPageAndLayout : { key : Browser.Navigation.Key, url : Url, shared : Shared.Model, layout : Maybe Main.Layouts.Model.Model } -> { page : ( Main.Pages.Model.Model, Cmd Msg ), layout : Maybe ( Main.Layouts.Model.Model, Cmd Msg ) }
 initPageAndLayout model =
     case Route.Path.fromUrl model.url of
@@ -110,7 +136,10 @@ initPageAndLayout model =
                             Main.Pages.Model.Home_
                             (Effect.map Main.Pages.Msg.Home_ >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Home_ >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -131,7 +160,10 @@ initPageAndLayout model =
                             Main.Pages.Model.Admin
                             (Effect.map Main.Pages.Msg.Admin >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -152,7 +184,10 @@ initPageAndLayout model =
                             Main.Pages.Model.Admin_AddUser
                             (Effect.map Main.Pages.Msg.Admin_AddUser >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin_AddUser >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -173,7 +208,10 @@ initPageAndLayout model =
                             Main.Pages.Model.Admin_ChangePassword
                             (Effect.map Main.Pages.Msg.Admin_ChangePassword >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin_ChangePassword >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -194,7 +232,10 @@ initPageAndLayout model =
                             Main.Pages.Model.Admin_RemoveUser
                             (Effect.map Main.Pages.Msg.Admin_RemoveUser >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin_RemoveUser >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -215,7 +256,10 @@ initPageAndLayout model =
                             Main.Pages.Model.Admin_ShowJson
                             (Effect.map Main.Pages.Msg.Admin_ShowJson >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Admin_ShowJson >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -236,7 +280,10 @@ initPageAndLayout model =
                             Main.Pages.Model.ChangePassword
                             (Effect.map Main.Pages.Msg.ChangePassword >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.ChangePassword >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -257,7 +304,10 @@ initPageAndLayout model =
                             Main.Pages.Model.InputJson
                             (Effect.map Main.Pages.Msg.InputJson >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.InputJson >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -278,7 +328,10 @@ initPageAndLayout model =
                             Main.Pages.Model.MoreOptions
                             (Effect.map Main.Pages.Msg.MoreOptions >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.MoreOptions >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -299,7 +352,10 @@ initPageAndLayout model =
                             Main.Pages.Model.NewRoute
                             (Effect.map Main.Pages.Msg.NewRoute >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.NewRoute >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -320,7 +376,10 @@ initPageAndLayout model =
                             Main.Pages.Model.OutputJson
                             (Effect.map Main.Pages.Msg.OutputJson >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.OutputJson >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -341,7 +400,10 @@ initPageAndLayout model =
                             (Main.Pages.Model.Routes_Filter_ params)
                             (Effect.map Main.Pages.Msg.Routes_Filter_ >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Routes_Filter_ >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -359,7 +421,10 @@ initPageAndLayout model =
                     Main.Pages.Model.SignIn
                     (Effect.map Main.Pages.Msg.SignIn >> fromPageEffect model)
                     ( pageModel, pageEffect )
-            , layout = Nothing
+            , layout = 
+                Page.layout pageModel page
+                    |> Maybe.map (Layouts.map (Main.Pages.Msg.SignIn >> Page))
+                    |> Maybe.map (initLayout model)
             }
 
         Route.Path.Stats ->
@@ -379,7 +444,10 @@ initPageAndLayout model =
                             Main.Pages.Model.Stats
                             (Effect.map Main.Pages.Msg.Stats >> fromPageEffect model)
                             ( pageModel, pageEffect )
-                    , layout = Nothing
+                    , layout = 
+                        Page.layout pageModel page
+                            |> Maybe.map (Layouts.map (Main.Pages.Msg.Stats >> Page))
+                            |> Maybe.map (initLayout model)
                     }
                 )
 
@@ -397,7 +465,10 @@ initPageAndLayout model =
                     Main.Pages.Model.NotFound_
                     (Effect.map Main.Pages.Msg.NotFound_ >> fromPageEffect model)
                     ( pageModel, pageEffect )
-            , layout = Nothing
+            , layout = 
+                Page.layout pageModel page
+                    |> Maybe.map (Layouts.map (Main.Pages.Msg.NotFound_ >> Page))
+                    |> Maybe.map (initLayout model)
             }
 
 
@@ -766,6 +837,12 @@ updateFromLayout msg model =
             Route.fromUrl () model.url
     in
     case ( toLayoutFromPage model, model.layout, msg ) of
+        ( Just (Layouts.Header props), Just (Main.Layouts.Model.Header layoutModel), Main.Layouts.Msg.Header layoutMsg ) ->
+            Tuple.mapBoth
+                (\newModel -> Just (Main.Layouts.Model.Header { layoutModel | header = newModel }))
+                (Effect.map Main.Layouts.Msg.Header >> fromLayoutEffect model)
+                (Layout.update (Layouts.Header.layout props model.shared route) layoutMsg layoutModel.header)
+
         _ ->
             ( model.layout
             , Cmd.none
@@ -1054,6 +1131,11 @@ subscriptions model =
         subscriptionsFromLayout : Sub Msg
         subscriptionsFromLayout =
             case ( maybeLayout, model.layout ) of
+                ( Just (Layouts.Header props), Just (Main.Layouts.Model.Header layoutModel) ) ->
+                    Layout.subscriptions (Layouts.Header.layout props model.shared route) layoutModel.header
+                        |> Sub.map Main.Layouts.Msg.Header
+                        |> Sub.map Layout
+
                 _ ->
                     Sub.none
     in
@@ -1085,7 +1167,22 @@ view model =
 
 toView : Model -> View Msg
 toView model =
-    viewPage model
+    let
+        route : Route ()
+        route =
+            Route.fromUrl () model.url
+    in
+    case ( toLayoutFromPage model, model.layout ) of
+        ( Just (Layouts.Header props), Just (Main.Layouts.Model.Header layoutModel) ) ->
+            Layout.view
+                (Layouts.Header.layout props model.shared route)
+                { model = layoutModel.header
+                , toContentMsg = Main.Layouts.Msg.Header >> Layout
+                , content = viewPage model
+                }
+
+        _ ->
+            viewPage model
 
 
 viewPage : Model -> View Msg
@@ -1453,6 +1550,12 @@ toLayoutUrlHookCmd oldModel model routes =
             Route.fromUrl () model.url
     in
     case ( toLayoutFromPage model, model.layout ) of
+        ( Just (Layouts.Header props), Just (Main.Layouts.Model.Header layoutModel) ) ->
+            Layout.toUrlMessages routes (Layouts.Header.layout props model.shared route)
+                |> List.map Main.Layouts.Msg.Header
+                |> List.map Layout
+                |> toCommands
+
         _ ->
             Cmd.none
 
@@ -1462,6 +1565,9 @@ hasNavigatedWithinNewLayout { from, to } =
     let
         isRelated maybePair =
             case maybePair of
+                Just ( Layouts.Header _, Layouts.Header _ ) ->
+                    True
+
                 _ ->
                     False
     in

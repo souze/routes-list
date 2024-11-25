@@ -7,6 +7,7 @@ import Effect exposing (Effect)
 import Element exposing (Element)
 import Element.Input
 import Lamdera
+import Layouts
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
@@ -21,6 +22,7 @@ page user model route =
         , view = view
         , subscriptions = \_ -> Sub.none
         }
+        |> Page.withLayout (\_ -> Layouts.Header {})
 
 
 
@@ -122,7 +124,7 @@ view model =
 
 viewBody : Model -> Element Msg
 viewBody model =
-    CommonView.mainColumnWithToprow
+    CommonView.mainColumn
         [ Element.Input.currentPassword []
             { onChange = FieldUpdate "oldpass"
             , text = model.oldPass

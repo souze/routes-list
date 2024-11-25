@@ -18,6 +18,7 @@ import Html
 import Html.Attributes
 import ImageGallery
 import Lamdera
+import Layouts
 import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
@@ -39,6 +40,7 @@ page user shared route =
         , view = view shared
         , subscriptions = \_ -> Sub.none
         }
+        |> Page.withLayout (\_ -> Layouts.Header {})
 
 
 
@@ -330,8 +332,7 @@ viewBody shared model =
 
         Nothing ->
             CommonView.mainColumn
-                (CommonView.header
-                    :: viewSortBox shared model
+                (viewSortBox shared model
                     :: viewRouteList shared model
                 )
 

@@ -6,6 +6,8 @@ import CommonView
 import Effect exposing (Effect)
 import Element exposing (Element)
 import Lamdera
+import Layout
+import Layouts
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
@@ -21,6 +23,7 @@ page user model route =
         , view = view
         , subscriptions = \_ -> Sub.none
         }
+        |> Page.withLayout (\_ -> Layouts.Header {})
 
 
 
@@ -75,7 +78,7 @@ view _ =
 
 viewBody : Element Msg
 viewBody =
-    CommonView.mainColumnWithToprow
+    CommonView.mainColumn
         [ CommonView.linkToRoute "New Route" Route.Path.NewRoute
         , CommonView.linkToRoute "Stats" Route.Path.Stats
         , CommonView.linkToRoute "Input Json" Route.Path.InputJson

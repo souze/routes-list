@@ -11,6 +11,7 @@ import Element exposing (Element)
 import Element.Background
 import Element.Input
 import Lamdera
+import Layouts
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
@@ -27,6 +28,7 @@ page user shared route =
         , view = view
         , subscriptions = \_ -> Sub.none
         }
+        |> Page.withLayout (\_ -> Layouts.Header {})
 
 
 
@@ -81,7 +83,7 @@ view : Model -> View Msg
 view model =
     { title = "Add new route"
     , body =
-        CommonView.mainColumnWithToprow
+        CommonView.mainColumn
             [ RouteEditPane.view model.newRouteData
                 |> Element.map RouteEditMsg
             , createRouteButton
