@@ -9,7 +9,9 @@ import Element
 import Json.Encode
 import Lamdera
 import Main as ElmLand
+import Main.Pages.Msg as MainPagesMsg
 import Pages.Admin.ShowJson
+import Pages.SignIn
 import Route as GenRoute
 import Shared
 import Shared.Msg
@@ -37,14 +39,6 @@ app =
 
 
 
--- INIT
--- initialFrontendModel : Url.Url -> Key -> Shared.Model -> Pages.Model -> Model
--- initialFrontendModel url key shared page =
---     { url = url
---     , key = key
---     , shared = shared
---     , page = page
---     }
 -- UPDATE
 
 
@@ -64,24 +58,31 @@ updateFromBackend msg model =
         ToFrontendYouAreAdmin ->
             ( model, sendSharedMsg (Shared.Msg.MsgFromBackend Shared.Msg.YouAreAdmin) )
 
-        -- ToFrontendAdminWholeModel backupModel ->
-        --     pageUpdate (Gen.Msg.Admin__ShowJson (Pages.Admin.ShowJson.BackupModelFromBackend backupModel)) model
-        -- ToFrontendWrongUserNamePassword ->
-        --     pageUpdate (Gen.Msg.SignIn__SignInDest_ Pages.SignIn.SignInDest_.WrongUsernameOrPassword) model
-        _ ->
+        ToFrontendUserNewPasswordAccepted ->
+            Debug.todo ""
+
+        ToFrontendUserNewPasswordRejected ->
+            Debug.todo ""
+
+        ToFrontendAdminWholeModel backupModel ->
+            pageUpdate (MainPagesMsg.Admin_ShowJson (Pages.Admin.ShowJson.BackupModelFromBackend backupModel)) model
+
+        ToFrontendWrongUserNamePassword ->
+            pageUpdate (MainPagesMsg.SignIn Pages.SignIn.WrongUsernameOrPassword) model
+
+        NoOpToFrontend ->
             ( model, Cmd.none )
 
 
-
--- pageUpdate : Pages.Msg -> Model -> ( Model, Cmd Msg )
--- pageUpdate pageMsg model =
---     let
---         ( page, effect ) =
---             Pages.update pageMsg model.page model.shared model.url model.key
---     in
---     ( { model | page = page }
---     , Effect.toCmd ( Shared, Page ) effect
---     )
+pageUpdate : MainPagesMsg.Msg -> Model -> ( Model, Cmd Msg )
+pageUpdate pageMsg model =
+    let
+        ( pageModel, pageCmd ) =
+            ElmLand.updateFromPage pageMsg model
+    in
+    ( { model | page = pageModel }
+    , pageCmd
+    )
 
 
 sendSharedMsg : Shared.Msg.Msg -> Cmd Msg

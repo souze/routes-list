@@ -226,7 +226,3 @@ toCmd options effect =
 sendToBackend : Bridge.ToBackend -> Effect msg
 sendToBackend toBackend =
     sendCmd <| Lamdera.sendToBackend toBackend
-
-
-
--- This is a duplicate, to avoid a cyclic dependency TODO
