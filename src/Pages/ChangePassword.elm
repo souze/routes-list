@@ -31,12 +31,19 @@ type alias Model =
     { oldPass : String
     , newPass : String
     , newPass2 : String
+    , statusMessage : StatusMessage
     }
+
+
+type StatusMessage
+    = Pending
+    | Success
+    | Failed
 
 
 init : ( Model, Effect Msg )
 init =
-    ( Model "" "" ""
+    ( Model "" "" "" Pending
     , Effect.none
     )
 
@@ -48,6 +55,8 @@ init =
 type Msg
     = FieldUpdate String String
     | ChangePassword
+    | FromBackendPasswordAccepted
+    | FromBackendPasswordRejected
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -62,6 +71,16 @@ update msg model =
             ( model
             , Effect.sendToBackend <|
                 Bridge.ToBackendUserChangePass { oldPassword = model.oldPass, newPassword = model.newPass }
+            )
+
+        FromBackendPasswordAccepted ->
+            ( { model | statusMessage = Success, oldPass = "", newPass = "", newPass2 = "" }
+            , Effect.none
+            )
+
+        FromBackendPasswordRejected ->
+            ( { model | statusMessage = Failed }
+            , Effect.none
             )
 
 
@@ -125,6 +144,16 @@ viewBody model =
             , label = Element.Input.labelAbove [] (Element.text "New password")
             , show = False
             }
+        , Element.el [] <|
+            case model.statusMessage of
+                Pending ->
+                    Element.text ""
+
+                Success ->
+                    Element.text "Password changed"
+
+                Failed ->
+                    Element.text "Password change failed"
         , if model.newPass /= model.newPass2 then
             Element.text "Passwords don't match"
 

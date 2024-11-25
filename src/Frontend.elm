@@ -11,6 +11,7 @@ import Lamdera
 import Main as ElmLand
 import Main.Pages.Msg as MainPagesMsg
 import Pages.Admin.ShowJson
+import Pages.ChangePassword
 import Pages.SignIn
 import Route as GenRoute
 import Shared
@@ -59,10 +60,10 @@ updateFromBackend msg model =
             ( model, sendSharedMsg (Shared.Msg.MsgFromBackend Shared.Msg.YouAreAdmin) )
 
         ToFrontendUserNewPasswordAccepted ->
-            Debug.todo ""
+            pageUpdate (MainPagesMsg.ChangePassword Pages.ChangePassword.FromBackendPasswordAccepted) model
 
         ToFrontendUserNewPasswordRejected ->
-            Debug.todo ""
+            pageUpdate (MainPagesMsg.ChangePassword Pages.ChangePassword.FromBackendPasswordRejected) model
 
         ToFrontendAdminWholeModel backupModel ->
             pageUpdate (MainPagesMsg.Admin_ShowJson (Pages.Admin.ShowJson.BackupModelFromBackend backupModel)) model
